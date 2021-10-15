@@ -79,11 +79,11 @@ NTSTATUS BoosterWrite(PDEVICE_OBJECT, PIRP Irp) {
 			break;
 		}
 		auto oldPriority = KeSetPriorityThread(thread, data->Priority);
-		KdPrint(("Thread Priority change for thread %u from %d to %d succeeded!\n",
+		KdPrint(("Priority change for thread %u from %d to %d succeeded!\n",
 			data->ThreadId, oldPriority, data->Priority));
 
 		ObDereferenceObject(thread);
-		information = sizeof(data);
+		information = sizeof(ThreadData);
 	} while (false);
 
 	Irp->IoStatus.Status = status;
