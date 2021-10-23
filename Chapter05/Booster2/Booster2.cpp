@@ -1,14 +1,14 @@
 #include <ntifs.h>
 #include "BoosterCommon.h"
+#include "Booster2.h"
 
 NTSTATUS BoosterCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 NTSTATUS BoosterWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp);
 void BoosterUnload(PDRIVER_OBJECT DriverObject);
 
 extern "C" NTSTATUS
-DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING /*RegistryPath*/) {
-	KdPrint(("Boster: DriverEntry\n"));
-
+DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
+	Log(LogLevel::Information, "Booster2: DriverEntry called. Registry Path: %wZ\n", RegistryPath);
 	DriverObject->DriverUnload = BoosterUnload;
 
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = BoosterCreateClose;
@@ -27,23 +27,26 @@ DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING /*RegistryPath*/) {
 		FALSE,                  // not exclusive
 		&DeviceObject);         // the resulting pointer
 	if (!NT_SUCCESS(status)) {
-		KdPrint(("Failed to create device object (0x%08X)\n", status));
+		LogError("Failed to create device object (0x%08X)\n", status);
 		return status;
 	}
+
+	NT_ASSERT(DeviceObject);
 
 	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Booster");
 	status = IoCreateSymbolicLink(&symLink, &devName);
 	if (!NT_SUCCESS(status)) {
-		KdPrint(("Failed to create symbolic link (0x%08X)\n", status));
-		IoDeleteDevice(DeviceObject);   // important!
+		LogError("Failed to create symbolic link (0x%X)\n", status);
+		IoDeleteDevice(DeviceObject);
 		return status;
 	}
+	NT_ASSERT(NT_SUCCESS(status));
 
 	return STATUS_SUCCESS;
 }
 
 void BoosterUnload(_In_ PDRIVER_OBJECT DriverObject) {
-	KdPrint(("Boster: Driver unload\n"));
+	LogInfo("Booster2 unload called\n");
 
 	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Booster");
 	// delete symbolic link
@@ -54,6 +57,7 @@ void BoosterUnload(_In_ PDRIVER_OBJECT DriverObject) {
 }
 
 NTSTATUS BoosterCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
+	Log(LogLevel::Verbose, "Booster2: Create/Close called\n");
 	UNREFERENCED_PARAMETER(DeviceObject);
 
 	Irp->IoStatus.Status = STATUS_SUCCESS;
@@ -80,11 +84,11 @@ NTSTATUS BoosterWrite(PDEVICE_OBJECT, PIRP Irp) {
 		PETHREAD thread;
 		status = PsLookupThreadByThreadId(ULongToHandle(data->ThreadId), &thread);
 		if (!NT_SUCCESS(status)) {
+			LogError("Failed to locate thread %u (0x%X)\n", data->ThreadId, status);
 			break;
 		}
 		auto oldPriority = KeSetPriorityThread(thread, data->Priority);
-		KdPrint(("Priority change for thread %u from %d to %d succeeded!\n",
-			data->ThreadId, oldPriority, data->Priority));
+		LogInfo("Priority for thread %u changed from %d to %d\n", data->ThreadId, oldPriority, data->Priority);
 
 		ObDereferenceObject(thread);
 		information = sizeof(ThreadData);
