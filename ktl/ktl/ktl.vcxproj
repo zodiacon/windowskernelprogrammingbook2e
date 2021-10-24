@@ -206,13 +206,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicString.h" />
+    <ClInclude Include="FastMutex.h" />
     <ClInclude Include="ktl.h" />
+    <ClInclude Include="Locker.h" />
     <ClInclude Include="Memory.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="std.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BasicString.cpp" />
+    <ClCompile Include="FastMutex.cpp" />
     <ClCompile Include="Memory.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
