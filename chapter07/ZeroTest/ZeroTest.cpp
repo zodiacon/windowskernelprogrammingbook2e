@@ -29,11 +29,11 @@ int main() {
 	if (bytes != sizeof(buffer))
 		printf("Wrong number of bytes\n");
 
-	long total = 0;
 	for (auto n : buffer)
-		total += n;
-	if (total != 0)
-		printf("Wrong data\n");
+		if (n != 0) {
+			printf("Wrong data!\n");
+			break;
+		}
 
 	// test write
 	printf("Test write\n");
