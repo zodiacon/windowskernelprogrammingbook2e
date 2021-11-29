@@ -10,7 +10,8 @@ DRIVER_DISPATCH ZeroCreateClose, ZeroRead, ZeroWrite, ZeroDeviceControl;
 
 // globals
 
-long long g_TotalRead, g_TotalWritten;
+long long g_TotalRead;
+long long g_TotalWritten;
 
 // DriverEntry
 
@@ -102,18 +103,34 @@ NTSTATUS ZeroWrite(PDEVICE_OBJECT, PIRP Irp) {
 }
 
 NTSTATUS ZeroDeviceControl(PDEVICE_OBJECT, PIRP Irp) {
-	auto stack = IoGetCurrentIrpStackLocation(Irp);
-	auto& dic = stack->Parameters.DeviceIoControl;
+	auto irpSp = IoGetCurrentIrpStackLocation(Irp);
+	auto& dic = irpSp->Parameters.DeviceIoControl;
+	auto status = STATUS_INVALID_DEVICE_REQUEST;
+	ULONG_PTR len = 0;
 
-	if (dic.IoControlCode != IOCTL_ZERO_GET_STATS)
-		return CompleteIrp(Irp, STATUS_INVALID_DEVICE_REQUEST);
+	switch (dic.IoControlCode) {
+		case IOCTL_ZERO_GET_STATS:
+		{
+			if (dic.OutputBufferLength < sizeof(ZeroStats)) {
+				status = STATUS_BUFFER_TOO_SMALL;
+				break;
+			}
 
-	if (dic.OutputBufferLength < sizeof(ZeroStats))
-		return CompleteIrp(Irp, STATUS_BUFFER_TOO_SMALL);
+			auto stats = (ZeroStats*)Irp->AssociatedIrp.SystemBuffer;
+			if (stats == nullptr) {
+				status = STATUS_INVALID_PARAMETER;
+				break;
+			}
+			stats->TotalRead = g_TotalRead;
+			stats->TotalWritten = g_TotalWritten;
+			len = sizeof(ZeroStats);
+			break;
+		}
 
-	auto stats = (ZeroStats*)Irp->AssociatedIrp.SystemBuffer;
-	stats->TotalRead = g_TotalRead;
-	stats->TotalWritten = g_TotalWritten;
-	
-	return CompleteIrp(Irp, STATUS_SUCCESS, sizeof(ZeroStats));
+		case IOCTL_ZERO_CLEAR_STATS:
+			g_TotalRead = g_TotalWritten = 0;
+			break;
+	}
+
+	return CompleteIrp(Irp, status, len);
 }
