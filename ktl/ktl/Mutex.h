@@ -1,11 +1,11 @@
 #pragma once
 
-struct FastMutex {
+struct Mutex {
 	void Init();
 	void Lock();
 	void Unlock();
 
 private:
-	FAST_MUTEX m_mutex;
+	KMUTEX m_mutex;
 };
 

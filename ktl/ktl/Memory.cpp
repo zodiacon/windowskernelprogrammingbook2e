@@ -18,6 +18,18 @@ void* __cdecl operator new(size_t size, POOL_TYPE pool, ULONG tag) {
     return p;
 }
 
+void* __cdecl operator new(size_t size, POOL_TYPE pool, EX_POOL_PRIORITY priority, ULONG tag) {
+#ifdef KTL_TRACK_MEMORY
+    DbgPrint(KTL_PREFIX "Allocating %u bytes from pool %d with tag 0x%X and priority %d: 0x%p\n", 
+        size, pool, tag, p, priority);
+    if (p) {
+        InterlockedIncrement(&AllocationCount);
+        InterlockedAdd64(&TotalAllocated, size);
+    }
+#endif
+    return ExAllocatePoolWithTagPriority(pool, size, tag, priority);
+}
+
 void __cdecl operator delete(void* p, size_t) {
     NT_ASSERT(p);
     ExFreePool(p);

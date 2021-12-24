@@ -2,13 +2,13 @@
 
 template<typename TLock>
 struct Locker {
-	Locker(TLock& lock) : _lock(lock) {
+	Locker(TLock& lock) : m_lock(lock) {
 		lock.Lock();
 	}
 	~Locker() {
-		_lock.Unlock();
+		m_lock.Unlock();
 	}
 
 private:
-	TLock& _lock;
+	TLock& m_lock;
 };

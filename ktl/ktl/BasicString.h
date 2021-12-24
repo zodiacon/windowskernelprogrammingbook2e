@@ -18,20 +18,20 @@ namespace ktl {
 		//
 		BasicString(T const* data = nullptr) {
 			if (data) {
-				_len = wcslen(data);
-				_capacity = min(_len, DefaultCapacity);
-				_data = AllocateAndCopy(_capacity, data, _len);
-				if (_data == nullptr)
+				m_len = wcslen(data);
+				m_capacity = min(m_len, DefaultCapacity);
+				m_data = AllocateAndCopy(m_capacity, data, m_len);
+				if (m_data == nullptr)
 					ExRaiseStatus(STATUS_NO_MEMORY);
 			}
 			else {
-				_len = _capacity = 0;
-				_data = nullptr;
+				m_len = m_capacity = 0;
+				m_data = nullptr;
 			}
 		}
 		BasicString(T const* data, ULONG len, ULONG capacity = 0) {
-			_data = AllocateAndCopy(_len = len, data, _capacity = capacity);
-			if (_data == nullptr)
+			m_data = AllocateAndCopy(m_len = len, data, m_capacity = capacity);
+			if (m_data == nullptr)
 				ExRaiseStatus(STATUS_NO_MEMORY);
 		}
 
@@ -39,31 +39,31 @@ namespace ktl {
 			static_assert(size == sizeof(wchar_t));
 			if (us->Length > 0) {
 				NT_ASSERT(us->Buffer);
-				_len = _capacity = us->Length / size;
-				_data = AllocateAndCopy(_len, us->Buffer);
-				if (_data == nullptr)
+				m_len = m_capacity = us->Length / size;
+				m_data = AllocateAndCopy(m_len, us->Buffer);
+				if (m_data == nullptr)
 					ExRaiseStatus(STATUS_NO_MEMORY);
 			}
 			else {
-				_data = nullptr;
-				_len = _capacity = 0;
+				m_data = nullptr;
+				m_len = m_capacity = 0;
 			}
 		}
 
 		explicit BasicString(UNICODE_STRING const& us) : BasicString(&us) {}
 
 		explicit BasicString(ULONG capacity) {
-			_capacity = capacity;
-			_data = AllocateAndCopy(capacity, nullptr);
-			if (_data == nullptr)
+			m_capacity = capacity;
+			m_data = AllocateAndCopy(capacity, nullptr);
+			if (m_data == nullptr)
 				ExRaiseStatus(STATUS_NO_MEMORY);
 		}
 
 		BasicString(BasicString const& other) {
 			if (this != &other) {
-				_len = other._len;
-				_data = AllocateAndCopy(_len, other._data);
-				if (_data == nullptr)
+				m_len = other.m_len;
+				m_data = AllocateAndCopy(m_len, other.m_data);
+				if (m_data == nullptr)
 					ExRaiseStatus(STATUS_NO_MEMORY);
 			}
 		}
@@ -73,11 +73,11 @@ namespace ktl {
 		//
 		BasicString(BasicString&& other) {
 			if (this != &other) {
-				_len = other.Length();
-				_capacity = other.Capacity();
-				_data = other._data;
-				other._data = nullptr;
-				other._len = other._capacity = 0;
+				m_len = other.Length();
+				m_capacity = other.Capacity();
+				m_data = other.m_data;
+				other.m_data = nullptr;
+				other.m_len = other.m_capacity = 0;
 			}
 		}
 
@@ -86,20 +86,20 @@ namespace ktl {
 		//
 		BasicString& operator=(BasicString const& other) {
 			if (this != &other) {
-				_len = other._len;
-				if (_capacity >= _len) {
+				m_len = other.m_len;
+				if (m_capacity >= m_len) {
 					//
 					// no need to allocate, just copy
 					//
-					memcpy(_data, other._data, _len * size);
+					memcpy(m_data, other.m_data, m_len * size);
 				}
 				else {
 					Release();
-					_len = other._len;
-					_data = AllocateAndCopy(_len, other._data);
-					if (_data == nullptr)
+					m_len = other.m_len;
+					m_data = AllocateAndCopy(m_len, other.m_data);
+					if (m_data == nullptr)
 						ExRaiseStatus(STATUS_NO_MEMORY);
-					_capacity = _len;
+					m_capacity = m_len;
 				}
 			}
 			return *this;
@@ -108,16 +108,16 @@ namespace ktl {
 		BasicString& operator=(PCUNICODE_STRING other) {
 			static_assert(size == sizeof(wchar_t));
 
-			_len = other->Length / size;
-			if (_capacity >= _len) {
-				if (_len > 0)
-					memcpy(_data, other->Buffer, _len * size);
+			m_len = other->Length / size;
+			if (m_capacity >= m_len) {
+				if (m_len > 0)
+					memcpy(m_data, other->Buffer, m_len * size);
 			}
 			else {
 				Release();
-				_capacity = min(_len, DefaultCapacity);
-				_data = AllocateAndCopy(_capacity, other->Buffer, _len);
-				if (_data == nullptr)
+				m_capacity = min(m_len, DefaultCapacity);
+				m_data = AllocateAndCopy(m_capacity, other->Buffer, m_len);
+				if (m_data == nullptr)
 					ExRaiseStatus(STATUS_NO_MEMORY);
 			}
 			return *this;
@@ -126,11 +126,11 @@ namespace ktl {
 		BasicString& operator=(BasicString&& other) {
 			if (this != &other) {
 				Release();
-				_len = other.Length();
-				_capacity = other.Capacity();
-				_data = other._data;
-				other._data = nullptr;
-				other._len = other._capacity = 0;
+				m_len = other.Length();
+				m_capacity = other.Capacity();
+				m_data = other.m_data;
+				other.m_data = nullptr;
+				other.m_len = other.m_capacity = 0;
 			}
 			return *this;
 		}
@@ -149,10 +149,10 @@ namespace ktl {
 		// destructor
 		//
 		~BasicString() {
-			if (_data) {
-				ExFreePool(_data);
+			if (m_data) {
+				ExFreePool(m_data);
 #if DBG
-				_data = nullptr;
+				m_data = nullptr;
 #endif
 			}
 		}
@@ -161,15 +161,15 @@ namespace ktl {
 		// attributes
 		//
 		ULONG Length() const {
-			return _len;
+			return m_len;
 		}
 
 		ULONG Capacity() const {
-			return _capacity;
+			return m_capacity;
 		}
 
 		T const* Data() {
-			return _data;
+			return m_data;
 		}
 
 		operator T const* () const {
@@ -180,23 +180,23 @@ namespace ktl {
 		// operations
 		//
 		BasicString& Append(BasicString const& str) {
-			auto newLen = _len + str.Length();
-			if (_len > _capacity) {
+			auto newLen = m_len + str.Length();
+			if (m_len > m_capacity) {
 				Release();
-				_data = AllocateAndCopy(newLen, str.Data());
-				if (_data == nullptr)
+				m_data = AllocateAndCopy(newLen, str.Data());
+				if (m_data == nullptr)
 					ExRaiseStatus(STATUS_NO_MEMORY);
-				_capacity = _len = newLen;
+				m_capacity = m_len = newLen;
 			}
 			else {
-				memcpy(_data + _len * size, str.Data(), str.Length() * size);
-				_len += str.Length();
+				memcpy(m_data + m_len * size, str.Data(), str.Length() * size);
+				m_len += str.Length();
 			}
 			return *this;
 		}
 
 		constexpr T const* Find(T const ch, bool caseInsensitive = false) const {
-			if (_len == 0)
+			if (m_len == 0)
 				return nullptr;
 
 			return caseInsensitive ? FindInternalNoCase(ch) : FindInternal(ch);
@@ -205,7 +205,7 @@ namespace ktl {
 		UNICODE_STRING& GetUnicodeString(UNICODE_STRING& uc) {
 			static_assert(size == sizeof(wchar_t));
 			uc.Length = uc.MaximumLength = Length() * sizeof(wchar_t);
-			uc.Buffer = _data;
+			uc.Buffer = m_data;
 			return uc;
 		}
 
@@ -214,7 +214,7 @@ namespace ktl {
 		}
 
 		void ShrinkToFit() {
-			if (_capacity > _len) {
+			if (m_capacity > m_len) {
 				BasicString s(*this);
 				Release();
 				*this = std::move(s);
@@ -222,33 +222,33 @@ namespace ktl {
 		}
 
 		void Release() {
-			if (_data) {
-				ExFreePool(_data);
-				_len = 0;
+			if (m_data) {
+				ExFreePool(m_data);
+				m_len = 0;
 			}
 		}
 
 		iterator_type begin() {
-			return _data;
+			return m_data;
 		}
 
 		const_iterator_type cbegin() const {
-			return _data;
+			return m_data;
 		}
 
 		iterator_type end() {
-			return _data + _len;
+			return m_data + m_len;
 		}
 
 		const_iterator_type cend() const {
-			return _data + _len;
+			return m_data + m_len;
 		}
 
 	protected:
 		constexpr T const* FindInternal(T ch) {
-			for (ULONG i = 0; i < _len; i++)
-				if (_data[i] == ch)
-					return _data + i;
+			for (ULONG i = 0; i < m_len; i++)
+				if (m_data[i] == ch)
+					return m_data + i;
 			return nullptr;
 		}
 
@@ -259,10 +259,10 @@ namespace ktl {
 			else
 				lch = towlower(ch);
 
-			for (ULONG i = 0; i < _len; i++) {
-				auto ch = tolower(_data[i]);
+			for (ULONG i = 0; i < m_len; i++) {
+				auto ch = tolower(m_data[i]);
 				if (ch == lch)
-					return _data + i;
+					return m_data + i;
 			}
 			return nullptr;
 		}
@@ -283,8 +283,8 @@ namespace ktl {
 		}
 
 	private:
-		T* _data;
-		ULONG _len, _capacity;
+		T* m_data;
+		ULONG m_len, m_capacity;
 	};
 
 	template<POOL_TYPE Pool, ULONG Tag>
