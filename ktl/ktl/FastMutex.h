@@ -1,11 +1,19 @@
 #pragma once
 
-struct FastMutex {
-	void Init();
-	void Lock();
-	void Unlock();
+#ifdef KTL_NAMESPACE
+namespace ktl {
+#endif
 
-private:
-	FAST_MUTEX m_mutex;
-};
+	struct FastMutex {
+		void Init();
+		void Lock();
+		void Unlock();
+
+	private:
+		FAST_MUTEX m_mutex;
+	};
+
+#ifdef KTL_NAMESPACE
+}
+#endif
 

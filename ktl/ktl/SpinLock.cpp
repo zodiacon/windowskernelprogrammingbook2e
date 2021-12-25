@@ -1,6 +1,10 @@
 #include "pch.h"
 #include "SpinLock.h"
 
+#ifdef KTL_NAMESPACE
+using namespace ktl;
+#endif
+
 void SpinLock::Init() {
 	KeInitializeSpinLock(&m_lock);
 }
@@ -24,3 +28,4 @@ void QueuedSpinLock::Lock() {
 void QueuedSpinLock::Unlock() {
 	KeReleaseInStackQueuedSpinLock(&m_handle);
 }
+

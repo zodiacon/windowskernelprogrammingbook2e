@@ -3,16 +3,16 @@
 #include "..\ktl\ktl.h"
 
 
-using WString = ktl::PWString<DRIVER_TAG>;
+using String = PWString<DRIVER_TAG>;
 
-WString* g_RegPath;
+String* g_RegPath;
 
 void TestUnload(PDRIVER_OBJECT);
 NTSTATUS TestCreateClose(PDEVICE_OBJECT, PIRP Irp);
 NTSTATUS TestDeviceControl(PDEVICE_OBJECT, PIRP Irp);
 
 extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
-	g_RegPath = new (PagedPool) WString(RegistryPath);
+	g_RegPath = new (PagedPool) String(RegistryPath);
 
 	DriverObject->DriverUnload = TestUnload;
 

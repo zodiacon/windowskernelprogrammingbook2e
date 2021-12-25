@@ -1,11 +1,18 @@
 #pragma once
 
-struct Mutex {
-	void Init();
-	void Lock();
-	void Unlock();
+#ifdef KTL_NAMESPACE
+namespace ktl {
+#endif
 
-private:
-	KMUTEX m_mutex;
-};
+	struct Mutex {
+		void Init();
+		void Lock();
+		void Unlock();
 
+	private:
+		KMUTEX m_mutex;
+	};
+
+#ifdef KTL_NAMESPACE
+}
+#endif

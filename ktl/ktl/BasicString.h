@@ -2,8 +2,14 @@
 
 #include "std.h"
 
+#ifndef DRIVER_TAG
+#define DRIVER_TAG 'dltk'
+#endif
+
+#ifdef KTL_NAMESPACE
 namespace ktl {
-	template<typename T, POOL_TYPE Pool, ULONG Tag>
+#endif
+	template<typename T, POOL_TYPE Pool, ULONG Tag = DRIVER_TAG>
 	struct BasicString {
 		static_assert(sizeof(T) <= sizeof(wchar_t));
 
@@ -18,8 +24,8 @@ namespace ktl {
 		//
 		BasicString(T const* data = nullptr) {
 			if (data) {
-				m_len = wcslen(data);
-				m_capacity = min(m_len, DefaultCapacity);
+				m_len = (ULONG)wcslen(data);
+				m_capacity = max(m_len, DefaultCapacity);
 				m_data = AllocateAndCopy(m_capacity, data, m_len);
 				if (m_data == nullptr)
 					ExRaiseStatus(STATUS_NO_MEMORY);
@@ -287,18 +293,18 @@ namespace ktl {
 		ULONG m_len, m_capacity;
 	};
 
-	template<POOL_TYPE Pool, ULONG Tag>
+	template<POOL_TYPE Pool, ULONG Tag = DRIVER_TAG>
 	using WString = BasicString<wchar_t, Pool, Tag>;
 
-	template<ULONG Tag> using NPWString = BasicString<wchar_t, NonPagedPoolNx, Tag>;
-	template<ULONG Tag> using PWString = BasicString<wchar_t, PagedPool, Tag>;
+	template<ULONG Tag = DRIVER_TAG> using NPWString = BasicString<wchar_t, NonPagedPoolNx, Tag>;
+	template<ULONG Tag = DRIVER_TAG> using PWString = BasicString<wchar_t, PagedPool, Tag>;
 
 	template<POOL_TYPE Pool, ULONG Tag>
 	using AString = BasicString<char, Pool, Tag>;
 
-	template<ULONG Tag> using NPAString = BasicString<char, NonPagedPoolNx, Tag>;
-	template<ULONG Tag> using PAString = BasicString<char, PagedPool, Tag>;
+	template<ULONG Tag = DRIVER_TAG> using NPAString = BasicString<char, NonPagedPoolNx, Tag>;
+	template<ULONG Tag = DRIVER_TAG> using PAString = BasicString<char, PagedPool, Tag>;
 
+#ifdef KTL_NAMESPACE
 }
-
-
+#endif
