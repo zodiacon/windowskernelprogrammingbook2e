@@ -61,18 +61,14 @@ void MelodyUnload(PDRIVER_OBJECT DriverObject) {
 }
 
 NTSTATUS MelodyCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
+	auto status = STATUS_SUCCESS;
 	if (IoGetCurrentIrpStackLocation(Irp)->MajorFunction == IRP_MJ_CREATE) {
-		KdPrint((DRIVER_PREFIX "IRP_MJ_CREATE\n"));
-
 		//
 		// create the "playback" thread (if needed)
 		//
-		auto status = g_State->Start(DeviceObject);
-		return CompleteRequest(Irp, status);
+		status = g_State->Start(DeviceObject);
 	}
-	else {
-		return CompleteRequest(Irp);
-	}
+	return CompleteRequest(Irp, status);
 }
 
 NTSTATUS MelodyDeviceControl(PDEVICE_OBJECT, PIRP Irp) {

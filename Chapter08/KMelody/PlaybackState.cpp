@@ -75,23 +75,24 @@ NTSTATUS PlaybackState::Start(PVOID IoObject) {
 }
 
 void PlaybackState::Stop() {
-	//
-	// signal the thread to stop
-	//
-	NT_ASSERT(m_hThread);
-	KeSetEvent(&m_stopEvent, 2, FALSE);
+	if (m_hThread) {
+		//
+		// signal the thread to stop
+		//
+		KeSetEvent(&m_stopEvent, 2, FALSE);
 
-	PVOID thread;
-	auto status = ObReferenceObjectByHandle(m_hThread, SYNCHRONIZE, *PsThreadType, KernelMode, &thread, nullptr);
-	if (!NT_SUCCESS(status)) {
-		KdPrint((DRIVER_PREFIX "Failed ObReferenceObjectByHandle for thread (0x%X)\n", status));
+		PVOID thread;
+		auto status = ObReferenceObjectByHandle(m_hThread, SYNCHRONIZE, *PsThreadType, KernelMode, &thread, nullptr);
+		if (!NT_SUCCESS(status)) {
+			KdPrint((DRIVER_PREFIX "Failed ObReferenceObjectByHandle for thread (0x%X)\n", status));
+		}
+		else {
+			KeWaitForSingleObject(thread, Executive, KernelMode, FALSE, nullptr);
+			ObDereferenceObject(thread);
+		}
+		ZwClose(m_hThread);
+		m_hThread = nullptr;
 	}
-	else {
-		KeWaitForSingleObject(thread, Executive, KernelMode, FALSE, nullptr);
-		ObDereferenceObject(thread);
-	}
-	ZwClose(m_hThread);
-	m_hThread = nullptr;
 }
 
 void PlaybackState::PlayMelody(PVOID context) {
@@ -151,7 +152,7 @@ void PlaybackState::PlayMelody() {
 			int count = max(1, note->Repeat);
 
 			KEVENT doneEvent;
-			KeInitializeEvent(&doneEvent, NotificationEvent, FALSE);
+			KeInitializeEvent(&doneEvent, SynchronizationEvent, FALSE);
 
 			for (int i = 0; i < count; i++) {
 				auto irp = IoBuildDeviceIoControlRequest(IOCTL_BEEP_SET, beepDevice, &params, sizeof(params),
