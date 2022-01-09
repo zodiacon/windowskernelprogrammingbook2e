@@ -59,16 +59,26 @@ NTSTATUS PlaybackState::AddNotes(const Note* notes, ULONG count) {
 }
 
 NTSTATUS PlaybackState::Start(PVOID IoObject) {
-	return IoCreateSystemThread(IoObject, &m_hThread, THREAD_ALL_ACCESS, nullptr, NtCurrentProcess(), nullptr, PlayMelody, this);
+	Locker locker(m_lock);
+	if (m_hThread)
+		return STATUS_SUCCESS;
+
+	return IoCreateSystemThread(
+		IoObject,				// Driver or device object
+		&m_hThread,				// resulting handle
+		THREAD_ALL_ACCESS,		// access mask
+		nullptr,				// no object attributes required
+		NtCurrentProcess(),		// create in the current process
+		nullptr,				// returned client ID
+		PlayMelody,				// thread function
+		this);					// passed to thread function
 }
 
 void PlaybackState::Stop() {
-	if (!m_hThread)
-		return;
-
 	//
 	// signal the thread to stop
 	//
+	NT_ASSERT(m_hThread);
 	KeSetEvent(&m_stopEvent, 2, FALSE);
 
 	if (m_WaitOnClose) {
@@ -95,6 +105,8 @@ void PlaybackState::PlayMelody(PVOID context) {
 }
 
 void PlaybackState::PlayMelody() {
+	KdPrint((DRIVER_PREFIX "Thread started: %u\n", HandleToULong(PsGetCurrentThreadId())));
+
 	PDEVICE_OBJECT beepDevice;
 	UNICODE_STRING beepDeviceName = RTL_CONSTANT_STRING(DD_BEEP_DEVICE_NAME_U);
 	PFILE_OBJECT beepFileObject;
@@ -110,7 +122,7 @@ void PlaybackState::PlayMelody() {
 
 	for (;;) {
 		status = KeWaitForMultipleObjects(2, objects, WaitAny, Executive, KernelMode, FALSE, nullptr, nullptr);
-		if (status == STATUS_WAIT_1) {	// stop event is signaled
+		if (status == STATUS_WAIT_1) {
 			KdPrint((DRIVER_PREFIX "Stop event signaled. Exiting thread...\n"));
 			break;
 		}
@@ -144,9 +156,10 @@ void PlaybackState::PlayMelody() {
 			params.Frequency = note->Frequency;
 			int count = max(1, note->Repeat);
 
+			KEVENT doneEvent;
+			KeInitializeEvent(&doneEvent, NotificationEvent, FALSE);
+
 			for (int i = 0; i < count; i++) {
-				KEVENT doneEvent;
-				KeInitializeEvent(&doneEvent, NotificationEvent, FALSE);
 				auto irp = IoBuildDeviceIoControlRequest(IOCTL_BEEP_SET, beepDevice, &params, sizeof(params),
 					nullptr, 0, FALSE, &doneEvent, &ioStatus);
 				if (!irp) {
@@ -191,4 +204,6 @@ void PlaybackState::PlayMelody() {
 	// cleanup
 	//
 	ObDereferenceObject(beepFileObject);
+
+	KdPrint((DRIVER_PREFIX "Exiting playback thread\n"));
 }

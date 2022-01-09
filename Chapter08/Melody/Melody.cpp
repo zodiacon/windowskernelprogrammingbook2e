@@ -28,8 +28,8 @@ int main() {
 		return Error("Failed in DeviceIoControl");
 
 	for (int i = 0; i < _countof(notes); i++) {
-		notes[i].Frequency = 1300 - i * 100;
-		notes[i].Duration = 600;
+		notes[i].Frequency = 1200 - i * 100;
+		notes[i].Duration = 300;
 		notes[i].Repeat = 2;
 		notes[i].Delay = 300;
 	}

@@ -28,7 +28,7 @@ DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
 
 	do {
 		UNICODE_STRING name = RTL_CONSTANT_STRING(L"\\Device\\KMelody");
-		status = IoCreateDevice(DriverObject, 0, &name, FILE_DEVICE_UNKNOWN, 0, TRUE, &DeviceObject);
+		status = IoCreateDevice(DriverObject, 0, &name, FILE_DEVICE_UNKNOWN, 0, FALSE, &DeviceObject);
 		if (!NT_SUCCESS(status))
 			break;
 
@@ -67,14 +67,15 @@ void MelodyUnload(PDRIVER_OBJECT DriverObject) {
 
 NTSTATUS MelodyCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 	if (IoGetCurrentIrpStackLocation(Irp)->MajorFunction == IRP_MJ_CREATE) {
+		KdPrint((DRIVER_PREFIX "IRP_MJ_CREATE\n"));
+
 		//
-		// create the "playback" thread
+		// create the "playback" thread (if needed)
 		//
 		auto status = g_State->Start(DeviceObject);
 		return CompleteRequest(Irp, status);
 	}
 	else {
-		g_State->Stop();
 		return CompleteRequest(Irp);
 	}
 }
@@ -117,7 +118,7 @@ NTSTATUS MelodyDeviceControl(PDEVICE_OBJECT, PIRP Irp) {
 			}
 			NT_ASSERT(g_State);
 			g_State->WaitOnClose(*wait);
-			info = 1;
+			info = sizeof(bool);
 			status = STATUS_SUCCESS;
 			break;
 	}
