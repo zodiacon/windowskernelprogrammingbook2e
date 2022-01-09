@@ -81,23 +81,17 @@ void PlaybackState::Stop() {
 	NT_ASSERT(m_hThread);
 	KeSetEvent(&m_stopEvent, 2, FALSE);
 
-	if (m_WaitOnClose) {
-		PVOID thread;
-		auto status = ObReferenceObjectByHandle(m_hThread, SYNCHRONIZE, *PsThreadType, KernelMode, &thread, nullptr);
-		if (!NT_SUCCESS(status)) {
-			KdPrint((DRIVER_PREFIX "Failed ObReferenceObjectByHandle for thread (0x%X)\n", status));
-		}
-		else {
-			KeWaitForSingleObject(thread, Executive, KernelMode, FALSE, nullptr);
-			ObDereferenceObject(thread);
-		}
+	PVOID thread;
+	auto status = ObReferenceObjectByHandle(m_hThread, SYNCHRONIZE, *PsThreadType, KernelMode, &thread, nullptr);
+	if (!NT_SUCCESS(status)) {
+		KdPrint((DRIVER_PREFIX "Failed ObReferenceObjectByHandle for thread (0x%X)\n", status));
+	}
+	else {
+		KeWaitForSingleObject(thread, Executive, KernelMode, FALSE, nullptr);
+		ObDereferenceObject(thread);
 	}
 	ZwClose(m_hThread);
 	m_hThread = nullptr;
-}
-
-void PlaybackState::WaitOnClose(bool wait) {
-	m_WaitOnClose = wait;
 }
 
 void PlaybackState::PlayMelody(PVOID context) {

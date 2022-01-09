@@ -24,7 +24,6 @@ DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
 	auto status = STATUS_SUCCESS;
 	PDEVICE_OBJECT DeviceObject = nullptr;
 	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\KMelody");
-	bool symLinkCreated = false;
 
 	do {
 		UNICODE_STRING name = RTL_CONSTANT_STRING(L"\\Device\\KMelody");
@@ -36,8 +35,6 @@ DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
 		if (!NT_SUCCESS(status))
 			break;
 
-		symLinkCreated = true;
-
 	} while (false);
 
 	if (!NT_SUCCESS(status)) {
@@ -46,8 +43,6 @@ DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
 		delete g_State;
 		if (DeviceObject)
 			IoDeleteDevice(DeviceObject);
-		if (symLinkCreated)
-			IoDeleteSymbolicLink(&symLink);
 		return status;
 	}
 
@@ -88,7 +83,6 @@ NTSTATUS MelodyDeviceControl(PDEVICE_OBJECT, PIRP Irp) {
 
 	switch (dic.IoControlCode) {
 		case IOCTL_MELODY_PLAY:
-		{
 			if (dic.InputBufferLength == 0 || dic.InputBufferLength % sizeof(Note) != 0) {
 				status = STATUS_INVALID_BUFFER_SIZE;
 				break;
@@ -104,23 +98,7 @@ NTSTATUS MelodyDeviceControl(PDEVICE_OBJECT, PIRP Irp) {
 				break;
 			info = dic.InputBufferLength;
 			break;
-		}
 
-		case IOCTL_MELODY_WAIT_ON_CLOSE:
-			if (dic.InputBufferLength == 0) {
-				status = STATUS_BUFFER_TOO_SMALL;
-				break;
-			}
-			auto wait = (bool*)Irp->AssociatedIrp.SystemBuffer;
-			if (wait == nullptr) {
-				status = STATUS_INVALID_PARAMETER;
-				break;
-			}
-			NT_ASSERT(g_State);
-			g_State->WaitOnClose(*wait);
-			info = sizeof(bool);
-			status = STATUS_SUCCESS;
-			break;
 	}
 	return CompleteRequest(Irp, status, info);
 }

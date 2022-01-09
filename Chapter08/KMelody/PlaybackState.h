@@ -11,7 +11,6 @@ struct PlaybackState {
 	NTSTATUS AddNotes(const Note* notes, ULONG count);
 	NTSTATUS Start(PVOID IoObject);
 	void Stop();
-	void WaitOnClose(bool wait);
 
 private:
 	static void PlayMelody(PVOID context);
@@ -23,5 +22,4 @@ private:
 	KSEMAPHORE m_counter;
 	KEVENT m_stopEvent;
 	HANDLE m_hThread{ nullptr };
-	bool m_WaitOnClose{ false };
 };
