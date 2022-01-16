@@ -15,6 +15,20 @@ namespace ktl {
 	private:
 		TLock& m_lock;
 	};
+
+	template<typename TLock>
+	struct SharedLocker {
+		SharedLocker(TLock& lock) : m_lock(lock) {
+			lock.LockShared();
+		}
+		~SharedLocker() {
+			m_lock.UnlockShared();
+		}
+
+	private:
+		TLock& m_lock;
+	};
+
 #ifdef KTL_NAMESPACE
 }
 #endif
