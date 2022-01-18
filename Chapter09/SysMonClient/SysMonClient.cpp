@@ -9,7 +9,7 @@
 #include <unordered_map>
 
 int Error(const char* text) {
-	printf("%s (%d)\n", text, ::GetLastError());
+	printf("%s (%u)\n", text, GetLastError());
 	return 1;
 }
 

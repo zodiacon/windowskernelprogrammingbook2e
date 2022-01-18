@@ -6,7 +6,7 @@ void OnProcessNotify(_Inout_ PEPROCESS Process, _In_ HANDLE ProcessId, _Inout_op
 void OnThreadNotify(_In_ HANDLE ProcessId, _In_ HANDLE ThreadId, _In_ BOOLEAN Create);
 void DetectorUnload(PDRIVER_OBJECT DriverObject);
 NTSTATUS DetectorCreateClose(PDEVICE_OBJECT, PIRP Irp);
-NTSTATUS DetectorDeviceControl(PDEVICE_OBJECT, PIRP Irp);
+NTSTATUS DetectorRead(PDEVICE_OBJECT, PIRP Irp);
 
 extern "C" NTSTATUS
 DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
@@ -24,6 +24,7 @@ DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 			KdPrint((DRIVER_PREFIX "failed to create device (0x%08X)\n", status));
 			break;
 		}
+		DeviceObject->Flags |= DO_DIRECT_IO;
 
 		status = IoCreateSymbolicLink(&symLink, &devName);
 		if (!NT_SUCCESS(status)) {
@@ -63,7 +64,7 @@ DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 
 	DriverObject->DriverUnload = DetectorUnload;
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = DriverObject->MajorFunction[IRP_MJ_CLOSE] = DetectorCreateClose;
-	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = DetectorDeviceControl;
+	DriverObject->MajorFunction[IRP_MJ_READ] = DetectorRead;
 
 	return status;
 }
@@ -103,8 +104,37 @@ bool AddNewProcess(HANDLE pid) {
 	return true;
 }
 
-NTSTATUS DetectorDeviceControl(PDEVICE_OBJECT, PIRP Irp) {
-	return CompleteRequest(Irp);
+NTSTATUS DetectorRead(PDEVICE_OBJECT, PIRP Irp) {
+	auto irpSp = IoGetCurrentIrpStackLocation(Irp);
+	auto len = irpSp->Parameters.Read.Length;
+	auto status = STATUS_SUCCESS;
+	ULONG bytes = 0;
+	NT_ASSERT(Irp->MdlAddress);
+
+	auto buffer = (PUCHAR)MmGetSystemAddressForMdlSafe(Irp->MdlAddress, NormalPagePriority);
+	if (!buffer) {
+		status = STATUS_INSUFFICIENT_RESOURCES;
+	}
+	else {
+		while (true) {
+			Locker locker(RemoteThreadsLock);
+			if (IsListEmpty(&RemoteThreadsHead))
+				break;
+
+			if (len < sizeof(RemoteThread))
+				break;
+
+			auto entry = RemoveHeadList(&RemoteThreadsHead);
+			auto info = CONTAINING_RECORD(entry, RemoteThreadItem, Link);
+			ULONG size = sizeof(RemoteThread);
+			memcpy(buffer, &info->Remote, size);
+			len -= size;
+			buffer += size;
+			bytes += size;
+			Lookaside.Free(info);
+		}
+	}
+	return CompleteRequest(Irp, status, bytes);
 }
 
 _Use_decl_annotations_
@@ -149,6 +179,7 @@ void OnThreadNotify(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create) {
 					data.CreatorProcessId, data.CreatorThreadId, data.ProcessId, data.ThreadId));
 
 				Locker locker(RemoteThreadsLock);
+				// TODO: check the list is not too big
 				InsertTailList(&RemoteThreadsHead, &item->Link);
 				return;
 			}

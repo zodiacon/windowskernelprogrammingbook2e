@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SysMonClient", "SysMonClien
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KDetector", "KDetector\KDetector.vcxproj", "{2216DBDB-219E-4B41-8EDA-12FBB8519A6A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Detector", "Detector\Detector.vcxproj", "{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
@@ -81,6 +83,18 @@ Global
 		{2216DBDB-219E-4B41-8EDA-12FBB8519A6A}.Release|x86.ActiveCfg = Release|Win32
 		{2216DBDB-219E-4B41-8EDA-12FBB8519A6A}.Release|x86.Build.0 = Release|Win32
 		{2216DBDB-219E-4B41-8EDA-12FBB8519A6A}.Release|x86.Deploy.0 = Release|Win32
+		{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}.Debug|ARM.ActiveCfg = Debug|Win32
+		{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}.Debug|x64.ActiveCfg = Debug|x64
+		{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}.Debug|x64.Build.0 = Debug|x64
+		{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}.Debug|x86.ActiveCfg = Debug|Win32
+		{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}.Debug|x86.Build.0 = Debug|Win32
+		{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}.Release|ARM.ActiveCfg = Release|Win32
+		{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}.Release|ARM64.ActiveCfg = Release|Win32
+		{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}.Release|x64.ActiveCfg = Release|x64
+		{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}.Release|x64.Build.0 = Release|x64
+		{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}.Release|x86.ActiveCfg = Release|Win32
+		{975CDD01-EE36-4CA5-8F91-0EAB60AD117D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
