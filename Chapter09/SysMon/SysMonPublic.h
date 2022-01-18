@@ -42,7 +42,7 @@ const int MaxImageFileSize = 300;
 
 struct ImageLoadInfo : ItemHeader {
 	ULONG ProcessId;
+	ULONG ImageSize;
 	ULONG64 LoadAddress;
-	ULONG64 ImageSize;
 	WCHAR ImageFileName[MaxImageFileSize + 1];
 };

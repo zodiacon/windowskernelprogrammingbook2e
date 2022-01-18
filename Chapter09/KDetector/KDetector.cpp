@@ -124,7 +124,10 @@ void OnProcessNotify(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO
 _Use_decl_annotations_
 void OnThreadNotify(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create) {
 	if (Create) {
-		bool remote = PsGetCurrentProcessId() != ProcessId;
+		bool remote = PsGetCurrentProcessId() != ProcessId
+			&& PsInitialSystemProcess != PsGetCurrentProcess()
+			&& PsGetProcessId(PsInitialSystemProcess) != ProcessId;
+
 		if (remote) {
 			//
 			// really remote if it's not a new process
@@ -142,7 +145,7 @@ void OnThreadNotify(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create) {
 				data.ProcessId = HandleToULong(ProcessId);
 				data.ThreadId = HandleToULong(ThreadId);
 				
-				KdPrint((DRIVER_PREFIX "Remote thread detected. (%u,%u) injected to (%u,%u)\n",
+				KdPrint((DRIVER_PREFIX "Remote thread detected. (PID: %u, TID: %u) -> (PID: %u, TID: %u)\n",
 					data.CreatorProcessId, data.CreatorThreadId, data.ProcessId, data.ThreadId));
 
 				Locker locker(RemoteThreadsLock);

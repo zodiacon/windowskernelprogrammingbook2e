@@ -196,6 +196,7 @@ void OnProcessNotify(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO
 	}
 }
 
+_Use_decl_annotations_
 void OnThreadNotify(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create) {
 	auto size = Create ? sizeof(FullItem<ThreadCreateInfo>) : sizeof(FullItem<ThreadExitInfo>);
 	auto info = (FullItem<ThreadExitInfo>*)ExAllocatePoolWithTag(PagedPool, size, DRIVER_TAG);
@@ -238,14 +239,10 @@ void OnImageLoadNotify(PUNICODE_STRING FullImageName, HANDLE ProcessId, PIMAGE_I
 	item.Size = sizeof(item);
 	item.Type = ItemType::ImageLoad;
 	item.ProcessId = HandleToULong(ProcessId);
-	item.ImageSize = ImageInfo->ImageSize;
+	item.ImageSize = (ULONG)ImageInfo->ImageSize;
 	item.LoadAddress = (ULONG64)ImageInfo->ImageBase;
 	item.ImageFileName[0] = 0;
 
-	if (FullImageName) {
-		wcscpy_s(item.ImageFileName, FullImageName->Buffer);
-		KdPrint((DRIVER_PREFIX "Image Load (%wZ)\n", FullImageName));
-	}
 	if (ImageInfo->ExtendedInfoPresent) {
 		auto exinfo = CONTAINING_RECORD(ImageInfo, IMAGE_INFO_EX, ImageInfo);
 		PFLT_FILE_NAME_INFORMATION nameInfo;
@@ -253,6 +250,9 @@ void OnImageLoadNotify(PUNICODE_STRING FullImageName, HANDLE ProcessId, PIMAGE_I
 			wcscpy_s(item.ImageFileName, nameInfo->Name.Buffer);
 			FltReleaseFileNameInformation(nameInfo);
 		}
+	}
+	if (item.ImageFileName[0] == 0 && FullImageName) {
+		wcscpy_s(item.ImageFileName, FullImageName->Buffer);
 	}
 
 	g_State.AddItem(&info->Entry);

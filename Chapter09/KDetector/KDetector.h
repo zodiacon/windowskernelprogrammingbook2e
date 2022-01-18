@@ -18,7 +18,7 @@ bool AddNewProcess(HANDLE pid);
 bool RemoveProcess(HANDLE pid);
 bool FindProcess(HANDLE pid);
 
-const ULONG MaxProcesses = 64;
+const ULONG MaxProcesses = 32;
 
 ULONG NewProcesses[MaxProcesses];
 ULONG NewProcessesCount;

@@ -27,7 +27,7 @@ std::wstring GetDosNameFromNTName(PCWSTR path) {
 
 	static std::unordered_map<std::wstring, std::wstring> map;
 	if (map.empty()) {
-		auto drives = ::GetLogicalDrives();
+		auto drives = GetLogicalDrives();
 		int c = 0;
 		WCHAR root[] = L"X:";
 		WCHAR target[128];
@@ -112,7 +112,6 @@ void DisplayInfo(BYTE* buffer, DWORD size) {
 		buffer += header->Size;
 		size -= header->Size;
 	}
-
 }
 
 int main() {
@@ -125,7 +124,7 @@ int main() {
 
 	while (true) {
 		DWORD bytes = 0;
-		if (!::ReadFile(hFile, buffer.get(), size, &bytes, nullptr))
+		if (!ReadFile(hFile, buffer.get(), size, &bytes, nullptr))
 			return Error("Failed to read");
 
 		if (bytes)
@@ -133,5 +132,7 @@ int main() {
 
 		Sleep(400);
 	}
+	CloseHandle(hFile);
+	return 0;
 }
 
