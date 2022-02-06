@@ -116,8 +116,8 @@ NTSTATUS DetectorRead(PDEVICE_OBJECT, PIRP Irp) {
 		status = STATUS_INSUFFICIENT_RESOURCES;
 	}
 	else {
+		Locker locker(RemoteThreadsLock);
 		while (true) {
-			Locker locker(RemoteThreadsLock);
 			if (IsListEmpty(&RemoteThreadsHead))
 				break;
 
@@ -163,7 +163,13 @@ void OnThreadNotify(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create) {
 			// really remote if it's not a new process
 			//
 			bool found = FindProcess(ProcessId);
-			if (!found) {
+			if (found) {
+				//
+				// first thread in process, remove process from new processes array
+				//
+				RemoveProcess(ProcessId);
+			}
+			else {
 				//
 				// really a remote thread
 				//
@@ -181,12 +187,7 @@ void OnThreadNotify(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create) {
 				Locker locker(RemoteThreadsLock);
 				// TODO: check the list is not too big
 				InsertTailList(&RemoteThreadsHead, &item->Link);
-				return;
 			}
-			//
-			// first thread in process, remove process from new processes array
-			//
-			RemoveProcess(ProcessId);
 		}
 	}
 }
