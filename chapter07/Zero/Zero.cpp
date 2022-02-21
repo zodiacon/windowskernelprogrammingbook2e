@@ -124,11 +124,13 @@ NTSTATUS ZeroDeviceControl(PDEVICE_OBJECT, PIRP Irp) {
 			stats->TotalRead = g_TotalRead;
 			stats->TotalWritten = g_TotalWritten;
 			len = sizeof(ZeroStats);
+			status = STATUS_SUCCESS;
 			break;
 		}
 
 		case IOCTL_ZERO_CLEAR_STATS:
 			g_TotalRead = g_TotalWritten = 0;
+			status = STATUS_SUCCESS;
 			break;
 	}
 
