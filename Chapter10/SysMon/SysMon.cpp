@@ -36,7 +36,6 @@ DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 			break;
 		}
 		symLinkCreated = true;
-
 		status = PsSetCreateProcessNotifyRoutineEx(OnProcessNotify, FALSE);
 		if (!NT_SUCCESS(status)) {
 			KdPrint((DRIVER_PREFIX "failed to register process callback (0x%08X)\n", status));

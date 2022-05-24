@@ -85,6 +85,7 @@ NTSTATUS BoosterWrite(PDEVICE_OBJECT, PIRP Irp) {
 		auto oldPriority = KeSetPriorityThread(thread, data->Priority);
 		KdPrint(("Priority change for thread %u from %d to %d succeeded!\n",
 			data->ThreadId, oldPriority, data->Priority));
+		UNREFERENCED_PARAMETER(oldPriority);
 
 		ObDereferenceObject(thread);
 		information = sizeof(ThreadData);
