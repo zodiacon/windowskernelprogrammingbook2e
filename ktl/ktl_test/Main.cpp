@@ -24,7 +24,7 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 
 void TestUnload(PDRIVER_OBJECT DriverObject) {
 	delete g_RegPath;
-	IoDeleteDevice(DriverObject->DeviceObject);
+	//IoDeleteDevice(DriverObject->DeviceObject);
 }
 
 NTSTATUS TestCreateClose(PDEVICE_OBJECT, PIRP Irp) {
