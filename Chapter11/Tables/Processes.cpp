@@ -56,10 +56,10 @@ NTSTATUS OnRegistryNotify(PVOID, PVOID Argument1, PVOID Argument2) {
 					case RegNtPostCreateKeyEx:
 						InterlockedIncrement64(&data->RegistryCreateKeyOperations); 
 						break;
-					case RegNtRenameKey: 
+					case RegNtPostRenameKey: 
 						InterlockedIncrement64(&data->RegistryRenameOperations); 
 						break;
-					case RegNtDeleteKey: 
+					case RegNtPostDeleteKey: 
 					case RegNtPostDeleteValueKey:
 						InterlockedIncrement64(&data->RegistryDeleteOperations); 
 						break;
