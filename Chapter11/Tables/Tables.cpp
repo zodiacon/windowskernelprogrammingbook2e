@@ -137,6 +137,9 @@ NTSTATUS TablesDeviceControl(PDEVICE_OBJECT, PIRP Irp) {
 			Locker locker(g_Globals.Lock);
 			auto data = (ProcessData*)RtlLookupElementGenericTable(&g_Globals.ProcessTable, &pid);
 			if (data == nullptr) {
+				//
+				// invalid or non-tracked PID
+				//
 				status = STATUS_INVALID_CID;
 				break;
 			}

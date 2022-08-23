@@ -74,8 +74,9 @@ void DeleteAllProcesses() {
 	//
 	// deallocate all objects still stored in the table
 	//
-	PVOID element;
-	while ((element = RtlGetElementGenericTable(&g_Globals.ProcessTable, 0)) != nullptr) {
-		RtlDeleteElementGenericTable(&g_Globals.ProcessTable, element);
+	PVOID p;
+	auto t = &g_Globals.ProcessTable;
+	while ((p = RtlGetElementGenericTable(t, 0)) != nullptr) {
+		RtlDeleteElementGenericTable(t, p);
 	}
 }

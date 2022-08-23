@@ -6,17 +6,17 @@
 #include <memory>
 #include "..\Tables\TablesPublic.h"
 
-int PrintUsage() {
-	printf("Usage: TablesTest [count | delete | get | geti | getall | help | start | stop] [<pid>]\n");
-	return 0;
-}
-
 void DisplayProcessData(ProcessData const& data) {
 	printf("PID: %u\n", data.Id);
 	printf("Registry set Value:  %lld\n", data.RegistrySetValueOperations);
 	printf("Registry delete:     %lld\n", data.RegistryDeleteOperations);
 	printf("Registry create key: %lld\n", data.RegistryCreateKeyOperations);
 	printf("Registry rename:     %lld\n", data.RegistryRenameOperations);
+}
+
+int PrintUsage() {
+	printf("Usage: TablesTest [count | delete | get | geti | getall | help | start | stop] [<pid>]\n");
+	return 0;
 }
 
 int main(int argc, const char* argv[]) {
