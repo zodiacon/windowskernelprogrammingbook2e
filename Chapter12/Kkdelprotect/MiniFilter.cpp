@@ -176,7 +176,7 @@ FLT_PREOP_CALLBACK_STATUS DelProtectPreCreate(PFLT_CALLBACK_DATA Data, PCFLT_REL
 		if (!IsDeleteAllowed(filename)) {
 			Data->IoStatus.Status = STATUS_ACCESS_DENIED;
 			status = FLT_PREOP_COMPLETE;
-			KdPrint(("Prevent deletion of %wZ\n", filename));
+			KdPrint(("(Pre Create) Prevent deletion of %wZ\n", filename));
 		}
 	}
 	return status;
@@ -199,7 +199,7 @@ FLT_PREOP_CALLBACK_STATUS DelProtectPreSetInformation(PFLT_CALLBACK_DATA Data, P
 			if (NT_SUCCESS(FltGetFileNameInformation(Data, FLT_FILE_NAME_QUERY_DEFAULT | FLT_FILE_NAME_NORMALIZED, &fi))) {
 				if (!IsDeleteAllowed(&fi->Name)) {
 					Data->IoStatus.Status = STATUS_ACCESS_DENIED;
-					KdPrint(("Prevent deletion of %wZ\n", &fi->Name));
+					KdPrint(("(Pre Set Information) Prevent deletion of %wZ\n", &fi->Name));
 					status = FLT_PREOP_COMPLETE;
 				}
 				FltReleaseFileNameInformation(fi);
