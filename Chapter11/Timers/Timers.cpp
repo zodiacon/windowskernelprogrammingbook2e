@@ -121,7 +121,7 @@ NTSTATUS TimersDeviceControl(PDEVICE_OBJECT, PIRP Irp) {
 			break;
 		}
 
-		case IOCTL_TIMERS_SET_PREIODIC:
+		case IOCTL_TIMERS_SET_PERIODIC:
 		{
 			if (dic.InputBufferLength < sizeof(PeriodicTimer)) {
 				status = STATUS_BUFFER_TOO_SMALL;

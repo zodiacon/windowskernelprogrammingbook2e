@@ -41,7 +41,7 @@ int main(int argc, const char* argv[]) {
 			if (argc > arg) {
 				data.Period = atoi(argv[arg]);
 			}
-			if (!DeviceIoControl(hDevice, hires ? IOCTL_TIMERS_SET_HIRES : IOCTL_TIMERS_SET_PREIODIC, &data, sizeof(data), nullptr, 0, &bytes, nullptr))
+			if (!DeviceIoControl(hDevice, hires ? IOCTL_TIMERS_SET_HIRES : IOCTL_TIMERS_SET_PERIODIC, &data, sizeof(data), nullptr, 0, &bytes, nullptr))
 				printf("Error setting timer (%u)\n", GetLastError());
 		}
 	}
