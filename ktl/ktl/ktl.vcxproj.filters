@@ -49,17 +49,17 @@
     <ClInclude Include="LinkedList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ExecutiveResource.h">
+    <ClInclude Include="EResource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LookasideList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BasicString.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -78,7 +78,10 @@
     <ClCompile Include="LinkedList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ExecutiveResource.cpp">
+    <ClCompile Include="EResource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ktl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "ExecutiveResource.h"
+#include "EResource.h"
 
 #ifdef KTL_NAMESPACE
 using namespace ktl;

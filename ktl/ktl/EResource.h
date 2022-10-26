@@ -4,7 +4,8 @@
 namespace ktl {
 #endif
 
-struct ExecutiveResource {
+class ExecutiveResource {
+public:
 	void Init();
 	void Delete();
 

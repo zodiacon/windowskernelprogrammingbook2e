@@ -17,3 +17,7 @@
 #include "std.h"
 #include "BasicString.h"
 #include "Memory.h"
+#include "EResource.h"
+#include "Vector.h"
+
+NTSTATUS CompleteRequest(PIRP Irp, NTSTATUS status = STATUS_SUCCESS, ULONG_PTR info = 0, CCHAR boost = IO_NO_INCREMENT);

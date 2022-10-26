@@ -206,7 +206,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicString.h" />
-    <ClInclude Include="ExecutiveResource.h" />
+    <ClInclude Include="EResource.h" />
     <ClInclude Include="FastMutex.h" />
     <ClInclude Include="ktl.h" />
     <ClInclude Include="LinkedList.h" />
@@ -217,11 +217,12 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="SpinLock.h" />
     <ClInclude Include="std.h" />
+    <ClInclude Include="Vector.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BasicString.cpp" />
-    <ClCompile Include="ExecutiveResource.cpp" />
+    <ClCompile Include="EResource.cpp" />
     <ClCompile Include="FastMutex.cpp" />
+    <ClCompile Include="ktl.cpp" />
     <ClCompile Include="LinkedList.cpp" />
     <ClCompile Include="Memory.cpp" />
     <ClCompile Include="Mutex.cpp" />
