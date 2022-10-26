@@ -131,13 +131,13 @@ namespace ktl {
 
 		void Add(T const& item) {
 			if (m_Size >= m_Capacity)
-				Resize(m_Capacity <<= 1);
+				Resize(max(m_Capacity * 2, m_Size + 1));
 			m_pData[m_Size++] = item;
 		}
 
 		void Add(T&& item) {
 			if (m_Size >= m_Capacity)
-				Resize(m_Capacity <<= 1);
+				Resize(max(m_Capacity * 2, m_Size + 1));
 			m_pData[m_Size++] = std::move(item);
 		}
 
@@ -152,8 +152,10 @@ namespace ktl {
 			auto data = static_cast<T*>(ExAllocatePool2((POOL_FLAGS)Pool, sizeof(T) * newSize, Tag));
 			if (data == nullptr)
 				::ExRaiseStatus(STATUS_NO_MEMORY);
-			memcpy(data, m_pData, sizeof(T) * m_Size);
-			ExFreePool(m_pData);
+			if (m_pData) {
+				memcpy(data, m_pData, sizeof(T) * m_Size);
+				ExFreePool(m_pData);
+			}
 			m_pData = data;
 		}
 
