@@ -2,8 +2,6 @@
 #include "MiniFilter.h"
 #include "Driver.h"
 
-FilterState g_State;
-
 NTSTATUS DelProtectUnload(_In_ FLT_FILTER_UNLOAD_FLAGS Flags);
 NTSTATUS DelProtectInstanceSetup(
 	_In_ PCFLT_RELATED_OBJECTS FltObjects,

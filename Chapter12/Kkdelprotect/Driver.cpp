@@ -8,20 +8,23 @@ NTSTATUS OnCreateClose(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp);
 NTSTATUS OnDeviceControl(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp);
 NTSTATUS InitMiniFilter(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath);
 
-extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
-	auto status = InitMiniFilter(DriverObject, RegistryPath);
-	if (!NT_SUCCESS(status)) {
-		KdPrint((DRIVER_PREFIX "Failed to init mini-filter (0x%X)\n", status));
+FilterState g_State;
+
+extern "C" 
+NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
+	auto status = g_State.Lock.Init();
+	if (!NT_SUCCESS(status))
 		return status;
-	}
 
-	g_State.Lock.Init();
-
+	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\DelProtect");
 	PDEVICE_OBJECT devObj = nullptr;
+	bool symLinkCreated = false;
 	do {
-		status = FltStartFiltering(g_State.Filter);
-		if (!NT_SUCCESS(status))
+		status = InitMiniFilter(DriverObject, RegistryPath);
+		if (!NT_SUCCESS(status)) {
+			KdPrint((DRIVER_PREFIX "Failed to init mini-filter (0x%X)\n", status));
 			break;
+		}
 
 		UNICODE_STRING devName = RTL_CONSTANT_STRING(L"\\Device\\DelProtect");
 		status = IoCreateDevice(DriverObject, 0, &devName, FILE_DEVICE_UNKNOWN, 0, FALSE, &devObj);
@@ -30,17 +33,24 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 			break;
 		}
 
-		UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\DelProtect");
 		status = IoCreateSymbolicLink(&symLink, &devName);
 		if (!NT_SUCCESS(status)) {
 			KdPrint(("Failed to create symbolic link (0x%08X)\n", status));
 			break;
 		}
+		symLinkCreated = true;
+		status = FltStartFiltering(g_State.Filter);
+		if (!NT_SUCCESS(status))
+			break;
 	} while (false);
 
 	if (!NT_SUCCESS(status)) {
 		KdPrint((DRIVER_PREFIX "Error in DriverEntry: 0x%X\n", status));
-		FltUnregisterFilter(g_State.Filter);
+		g_State.Lock.Delete();
+		if(g_State.Filter)
+			FltUnregisterFilter(g_State.Filter);
+		if (symLinkCreated)
+			IoDeleteSymbolicLink(&symLink);
 		if (devObj)
 			IoDeleteDevice(devObj);
 		return status;
