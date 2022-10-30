@@ -178,7 +178,11 @@ namespace ktl {
 			return m_capacity;
 		}
 
-		T const* Data() {
+		T const* Data() const {
+			return m_data;
+		}
+
+		T* Data() {
 			return m_data;
 		}
 
