@@ -163,7 +163,7 @@ FLT_PREOP_CALLBACK_STATUS DelProtectPreCreate(PFLT_CALLBACK_DATA Data, PCFLT_REL
 	if (Data->RequestorMode == KernelMode)
 		return FLT_PREOP_SUCCESS_NO_CALLBACK;
 
-	auto& params = Data->Iopb->Parameters.Create;
+	auto const& params = Data->Iopb->Parameters.Create;
 	auto status = FLT_PREOP_SUCCESS_NO_CALLBACK;
 
 	if (params.Options & FILE_DELETE_ON_CLOSE) {
@@ -181,15 +181,16 @@ FLT_PREOP_CALLBACK_STATUS DelProtectPreCreate(PFLT_CALLBACK_DATA Data, PCFLT_REL
 }
 
 FLT_PREOP_CALLBACK_STATUS DelProtectPreSetInformation(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID*) {
-	UNREFERENCED_PARAMETER(Data);
 	UNREFERENCED_PARAMETER(FltObjects);
+
+	if (Data->RequestorMode == KernelMode)
+		return FLT_PREOP_SUCCESS_NO_CALLBACK;
 
 	auto status = FLT_PREOP_SUCCESS_NO_CALLBACK;
 	auto& params = Data->Iopb->Parameters.SetFileInformation;
 	if (params.FileInformationClass == FileDispositionInformation || params.FileInformationClass == FileDispositionInformationEx) {
-		KdPrint((DRIVER_PREFIX "File Disposition Information\n"));
 		auto info = (FILE_DISPOSITION_INFORMATION*)params.InfoBuffer;
-		if (info->DeleteFile) {	// also covers FileDispositionInformationEx Flags
+		if (info->DeleteFile & 1) {	// also covers FileDispositionInformationEx Flags
 			PFLT_FILE_NAME_INFORMATION fi;
 			//
 			// using FLT_FILE_NAME_NORMALIZED is important here for parsing purposes
