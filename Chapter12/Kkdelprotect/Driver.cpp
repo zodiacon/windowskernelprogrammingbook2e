@@ -87,25 +87,38 @@ NTSTATUS OnDeviceControl(PDEVICE_OBJECT, PIRP Irp) {
 	switch (dic.IoControlCode) {
 		case IOCTL_DELPROTECT_SET_EXTENSIONS:
 			auto ext = (WCHAR*)Irp->AssociatedIrp.SystemBuffer;
-			if (ext == nullptr || dic.InputBufferLength < sizeof(WCHAR) * 2 || ext[dic.InputBufferLength / sizeof(WCHAR) - 1] != 0) {
+			auto inputLen = dic.InputBufferLength;
+			if (ext == nullptr || inputLen < sizeof(WCHAR) * 2 ||
+				ext[inputLen / sizeof(WCHAR) - 1] != 0) {
 				status = STATUS_INVALID_PARAMETER;
 				break;
 			}
-			if (g_State.Extentions.MaximumLength < dic.InputBufferLength - sizeof(WCHAR)) {
-				auto buffer = ExAllocatePool2(POOL_FLAG_PAGED | POOL_FLAG_UNINITIALIZED, dic.InputBufferLength, DRIVER_TAG);
+			if (g_State.Extentions.MaximumLength <
+				inputLen - sizeof(WCHAR)) {
+				//
+				// allocate a new buffer to hold the extensions
+				//
+				auto buffer = ExAllocatePool2(POOL_FLAG_PAGED,
+					inputLen, DRIVER_TAG);
 				if (buffer == nullptr) {
 					status = STATUS_INSUFFICIENT_RESOURCES;
 					break;
 				}
-				g_State.Extentions.MaximumLength = (USHORT)dic.InputBufferLength;
+				g_State.Extentions.MaximumLength = (USHORT)inputLen;
+				//
+				// free the old buffer
+				//
 				ExFreePool(g_State.Extentions.Buffer);
 				g_State.Extentions.Buffer = (PWSTR)buffer;
 			}
 			UNICODE_STRING ustr;
 			RtlInitUnicodeString(&ustr, ext);
+			//
+			// make sure the extensions are uppercase
+			//
 			RtlUpcaseUnicodeString(&ustr, &ustr, FALSE);
-			memcpy(g_State.Extentions.Buffer, ext, len = dic.InputBufferLength);
-			g_State.Extentions.Length = (USHORT)dic.InputBufferLength;
+			memcpy(g_State.Extentions.Buffer, ext, len = inputLen);
+			g_State.Extentions.Length = (USHORT)inputLen;
 			status = STATUS_SUCCESS;
 			break;
 	}
