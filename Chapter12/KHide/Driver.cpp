@@ -45,7 +45,7 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 		KdPrint((DRIVER_PREFIX "Error in DriverEntry: 0x%X\n", status));
 		if (g_State)
 			delete g_State;
-		if(g_State->Filter)
+		if (g_State->Filter)
 			FltUnregisterFilter(g_State->Filter);
 		if (devObj)
 			IoDeleteDevice(devObj);
@@ -87,12 +87,28 @@ NTSTATUS OnDeviceControl(_In_ PDEVICE_OBJECT, _In_ PIRP Irp) {
 	auto const& dic = irpSp->Parameters.DeviceIoControl;
 
 	switch (dic.IoControlCode) {
+		case IOCTL_SHOW_ALL:
+			{
+				Locker locker(g_State->Lock);
+				g_State->Files.Clear();
+			}
+			status = STATUS_SUCCESS;
+			break;
+
 		case IOCTL_HIDE_PATH:
-			auto path = (PWSTR)Irp->AssociatedIrp.SystemBuffer;
-			if (path[1] != L':') {
-				status = STATUS_BAD_DATA;
+			if (dic.InputBufferLength < sizeof(WCHAR) * 4) {
+				status = STATUS_BUFFER_TOO_SMALL;
 				break;
 			}
+			auto path = (PWSTR)Irp->AssociatedIrp.SystemBuffer;
+			if (path == nullptr || path[1] != L':') {
+				status = STATUS_INVALID_PARAMETER;
+				break;
+			}
+			//
+			// make sure the string is null-terminated
+			//
+			path[dic.InputBufferLength / sizeof(WCHAR) - 1] = 0;
 			{
 				Locker locker(g_State->Lock);
 				g_State->Files.Add(path);
