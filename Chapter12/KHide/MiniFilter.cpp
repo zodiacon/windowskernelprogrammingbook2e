@@ -3,8 +3,6 @@
 #include "Driver.h"
 #include <Locker.h>
 
-FilterState* g_State;
-
 NTSTATUS HideUnload(_In_ FLT_FILTER_UNLOAD_FLAGS Flags);
 NTSTATUS HideInstanceSetup(
 	_In_ PCFLT_RELATED_OBJECTS FltObjects,

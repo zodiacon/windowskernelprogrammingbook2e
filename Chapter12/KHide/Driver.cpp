@@ -3,6 +3,8 @@
 #include "MiniFilter.h"
 #include <Locker.h>
 
+FilterState* g_State;
+
 void OnUnload(_In_ PDRIVER_OBJECT DriverObject);
 NTSTATUS OnCreateClose(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp);
 NTSTATUS OnDeviceControl(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp);
@@ -43,12 +45,12 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 
 	if (!NT_SUCCESS(status)) {
 		KdPrint((DRIVER_PREFIX "Error in DriverEntry: 0x%X\n", status));
-		if (g_State)
-			delete g_State;
 		if (g_State->Filter)
 			FltUnregisterFilter(g_State->Filter);
 		if (devObj)
 			IoDeleteDevice(devObj);
+		if (g_State)
+			delete g_State;
 		return status;
 	}
 
