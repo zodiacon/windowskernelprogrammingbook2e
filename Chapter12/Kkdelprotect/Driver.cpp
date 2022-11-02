@@ -3,7 +3,6 @@
 #include "MiniFilter.h"
 #include "KDelProtectPublic.h"
 
-void OnUnload(_In_ PDRIVER_OBJECT DriverObject);
 NTSTATUS OnCreateClose(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp);
 NTSTATUS OnDeviceControl(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp);
 NTSTATUS InitMiniFilter(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath);
@@ -56,7 +55,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) 
 		return status;
 	}
 
-	DriverObject->DriverUnload = OnUnload;
+	g_State.DriverObject = DriverObject;
 
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = DriverObject->MajorFunction[IRP_MJ_CLOSE] = OnCreateClose;
 	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = OnDeviceControl;
@@ -64,13 +63,6 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) 
 	KdPrint((DRIVER_PREFIX "DriverEntry completed successfully\n"));
 
 	return status;
-}
-
-void OnUnload(PDRIVER_OBJECT DriverObject) {
-	g_State.Lock.Delete();
-	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\DelProtect");
-	IoDeleteSymbolicLink(&symLink);
-	IoDeleteDevice(DriverObject->DeviceObject);
 }
 
 _Use_decl_annotations_

@@ -9,6 +9,7 @@ struct FilterState {
 	~FilterState();
 
 	PFLT_FILTER Filter;
+	PDRIVER_OBJECT DriverObject;
 	Vector<WString<PoolType::NonPaged>, PoolType::NonPaged> Files;
 	ExecutiveResource Lock;
 };

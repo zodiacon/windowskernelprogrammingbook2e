@@ -127,6 +127,11 @@ NTSTATUS DelProtectUnload(FLT_FILTER_UNLOAD_FLAGS Flags) {
 	UNREFERENCED_PARAMETER(Flags);
 
 	FltUnregisterFilter(g_State.Filter);
+	g_State.Lock.Delete();
+	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\DelProtect");
+	IoDeleteSymbolicLink(&symLink);
+	IoDeleteDevice(g_State.DriverObject->DeviceObject);
+
 	return STATUS_SUCCESS;
 }
 

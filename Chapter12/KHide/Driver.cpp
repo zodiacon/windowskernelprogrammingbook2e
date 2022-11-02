@@ -5,7 +5,6 @@
 
 FilterState* g_State;
 
-void OnUnload(_In_ PDRIVER_OBJECT DriverObject);
 NTSTATUS OnCreateClose(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp);
 NTSTATUS OnDeviceControl(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp);
 NTSTATUS InitMiniFilter(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath);
@@ -58,10 +57,9 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 		return status;
 	}
 
-	DriverObject->DriverUnload = OnUnload;
-
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = DriverObject->MajorFunction[IRP_MJ_CLOSE] = OnCreateClose;
 	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = OnDeviceControl;
+	g_State->DriverObject = DriverObject;
 
 	//
 	// for testing purposes
@@ -77,13 +75,6 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 
 NTSTATUS OnCreateClose(_In_ PDEVICE_OBJECT, _In_ PIRP Irp) {
 	return CompleteRequest(Irp);
-}
-
-void OnUnload(PDRIVER_OBJECT DriverObject) {
-	delete g_State;
-	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Hide");
-	IoDeleteSymbolicLink(&symLink);
-	IoDeleteDevice(DriverObject->DeviceObject);
 }
 
 NTSTATUS OnDeviceControl(_In_ PDEVICE_OBJECT, _In_ PIRP Irp) {

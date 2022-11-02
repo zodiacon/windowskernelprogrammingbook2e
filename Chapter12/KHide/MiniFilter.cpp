@@ -115,6 +115,12 @@ NTSTATUS HideUnload(FLT_FILTER_UNLOAD_FLAGS Flags) {
 	UNREFERENCED_PARAMETER(Flags);
 
 	FltUnregisterFilter(g_State->Filter);
+
+	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Hide");
+	IoDeleteSymbolicLink(&symLink);
+	IoDeleteDevice(g_State->DriverObject->DeviceObject);
+	delete g_State;
+
 	return STATUS_SUCCESS;
 }
 
@@ -149,8 +155,8 @@ VOID HideInstanceTeardownComplete(PCFLT_RELATED_OBJECTS FltObjects, FLT_INSTANCE
 FLT_POSTOP_CALLBACK_STATUS OnPostDirectoryControl(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID, FLT_POST_OPERATION_FLAGS flags) {
 	UNREFERENCED_PARAMETER(FltObjects);
 
-	if (Data->RequestorMode == KernelMode || 
-		Data->Iopb->MinorFunction != IRP_MN_QUERY_DIRECTORY || 
+	if (Data->RequestorMode == KernelMode ||
+		Data->Iopb->MinorFunction != IRP_MN_QUERY_DIRECTORY ||
 		(flags & FLTFL_POST_OPERATION_DRAINING))
 		return FLT_POSTOP_FINISHED_PROCESSING;
 
@@ -167,7 +173,7 @@ FLT_POSTOP_CALLBACK_STATUS OnPostDirectoryControl(PFLT_CALLBACK_DATA Data, PCFLT
 		FileIdGlobalTxDirectoryInformationDefinition
 	};
 	const FILE_INFORMATION_DEFINITION* actual = nullptr;
-	for(auto const& def : defs)
+	for (auto const& def : defs)
 		if (def.Class == params.FileInformationClass) {
 			actual = &def;
 			break;
@@ -219,50 +225,44 @@ FLT_POSTOP_CALLBACK_STATUS OnPostDirectoryControl(PFLT_CALLBACK_DATA Data, PCFLT
 				//
 				// parent directory. find last component
 				//
-				__try {
-					ULONG nextOffset = 0;
-					PUCHAR prev = nullptr;
-					auto str = bs + 1;	// the final component beyond the backslash
+				ULONG nextOffset = 0;
+				PUCHAR prev = nullptr;
+				auto str = bs + 1;	// the final component beyond the backslash
 
-					do {
+				do {
+					//
+					// due to a current bug in the definition of FILE_INFORMATION_DEFINITION
+					// the file name and length offsets are switched in the definitions
+					// of the macros that initialize FILE_INFORMATION_DEFINITION
+					//
+					auto filename = (PCWSTR)(base + actual->FileNameLengthOffset);
+					auto filenameLen = *(PULONG)(base + actual->FileNameOffset);
+
+					nextOffset = *(PULONG)(base + actual->NextEntryOffset);
+
+					if (filenameLen && _wcsnicmp(str, filename, filenameLen / sizeof(WCHAR)) == 0) {
 						//
-						// due to a current bug in the definition of FILE_INFORMATION_DEFINITION
-						// the file name and length offsets are switched in the definitions
-						// of the macros that initialize FILE_INFORMATION_DEFINITION
+						// found it! hide it and exit
 						//
-						auto filename = (PCWSTR)(base + actual->FileNameLengthOffset);
-						auto filenameLen = *(PULONG)(base + actual->FileNameOffset);
-
-						nextOffset = *(PULONG)(base + actual->NextEntryOffset);
-
-						if (filenameLen && _wcsnicmp(str, filename, filenameLen / sizeof(WCHAR)) == 0) {
+						if (prev == nullptr) {
 							//
-							// found it! hide it and exit
+							// first entry - move the buffer to the next item
 							//
-							if (prev == nullptr) {
-								//
-								// first entry - move the buffer to the next item
-								//
-								params.DirectoryBuffer = base + nextOffset;
+							params.DirectoryBuffer = base + nextOffset;
 
-								//
-								// notify the Filter Manager
-								//
-								FltSetCallbackDataDirty(Data);
-							}
-							else {
-								*(PULONG)(prev + actual->NextEntryOffset) += nextOffset;
-							}
-							break;
+							//
+							// notify the Filter Manager
+							//
+							FltSetCallbackDataDirty(Data);
 						}
-						prev = base;
-						base += nextOffset;
-					} while (nextOffset != 0);
-				}
-				__except (GetExceptionCode() == STATUS_ACCESS_VIOLATION 
-					? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
-					KdPrint((DRIVER_PREFIX "Access Violation!\n"));
-				}
+						else {
+							*(PULONG)(prev + actual->NextEntryOffset) += nextOffset;
+						}
+						break;
+					}
+					prev = base;
+					base += nextOffset;
+				} while (nextOffset != 0);
 				break;
 			}
 		}
