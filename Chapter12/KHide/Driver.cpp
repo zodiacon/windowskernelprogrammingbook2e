@@ -17,16 +17,14 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 
 	PDEVICE_OBJECT devObj = nullptr;
 	NTSTATUS status;
+	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Hide");
+	bool symLinkCreated = false;
 	do {
 		status = InitMiniFilter(DriverObject, RegistryPath);
 		if (!NT_SUCCESS(status)) {
 			KdPrint((DRIVER_PREFIX "Failed to init mini-filter (0x%X)\n", status));
 			break;
 		}
-
-		status = FltStartFiltering(g_State->Filter);
-		if (!NT_SUCCESS(status))
-			break;
 
 		UNICODE_STRING devName = RTL_CONSTANT_STRING(L"\\Device\\Hide");
 		status = IoCreateDevice(DriverObject, 0, &devName, FILE_DEVICE_UNKNOWN, 0, FALSE, &devObj);
@@ -35,18 +33,24 @@ extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING Reg
 			break;
 		}
 
-		UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\Hide");
 		status = IoCreateSymbolicLink(&symLink, &devName);
 		if (!NT_SUCCESS(status)) {
 			KdPrint(("Failed to create symbolic link (0x%08X)\n", status));
 			break;
 		}
+		symLinkCreated = true;
+
+		status = FltStartFiltering(g_State->Filter);
+		if (!NT_SUCCESS(status))
+			break;
 	} while (false);
 
 	if (!NT_SUCCESS(status)) {
 		KdPrint((DRIVER_PREFIX "Error in DriverEntry: 0x%X\n", status));
 		if (g_State->Filter)
 			FltUnregisterFilter(g_State->Filter);
+		if (symLinkCreated)
+			IoDeleteSymbolicLink(&symLink);
 		if (devObj)
 			IoDeleteDevice(devObj);
 		if (g_State)

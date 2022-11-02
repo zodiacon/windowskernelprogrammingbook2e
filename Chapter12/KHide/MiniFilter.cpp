@@ -149,7 +149,9 @@ VOID HideInstanceTeardownComplete(PCFLT_RELATED_OBJECTS FltObjects, FLT_INSTANCE
 FLT_POSTOP_CALLBACK_STATUS OnPostDirectoryControl(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID, FLT_POST_OPERATION_FLAGS flags) {
 	UNREFERENCED_PARAMETER(FltObjects);
 
-	if (Data->Iopb->MinorFunction != IRP_MN_QUERY_DIRECTORY || (flags & FLTFL_POST_OPERATION_DRAINING))
+	if (Data->RequestorMode == KernelMode || 
+		Data->Iopb->MinorFunction != IRP_MN_QUERY_DIRECTORY || 
+		(flags & FLTFL_POST_OPERATION_DRAINING))
 		return FLT_POSTOP_FINISHED_PROCESSING;
 
 	auto& params = Data->Iopb->Parameters.DirectoryControl.QueryDirectory;
@@ -158,8 +160,11 @@ FLT_POSTOP_CALLBACK_STATUS OnPostDirectoryControl(PFLT_CALLBACK_DATA Data, PCFLT
 		FileFullDirectoryInformationDefinition,
 		FileBothDirectoryInformationDefinition,
 		FileDirectoryInformationDefinition,
+		FileNamesInformationDefinition,
 		FileIdFullDirectoryInformationDefinition,
 		FileIdBothDirectoryInformationDefinition,
+		FileIdExtdDirectoryInformationDefinition,
+		FileIdGlobalTxDirectoryInformationDefinition
 	};
 	const FILE_INFORMATION_DEFINITION* actual = nullptr;
 	for(auto const& def : defs)
@@ -179,8 +184,23 @@ FLT_POSTOP_CALLBACK_STATUS OnPostDirectoryControl(PFLT_CALLBACK_DATA Data, PCFLT
 	//
 	IoQueryFileDosDeviceName(FltObjects->FileObject, &dosPath);
 	if (dosPath) {
+		PUCHAR base = nullptr;
+		//
+		// use MDL if available
+		//
+		if (params.MdlAddress)
+			base = (PUCHAR)MmGetSystemAddressForMdlSafe(params.MdlAddress, NormalPagePriority);
+		if (!base)
+			base = (PUCHAR)params.DirectoryBuffer;
+		if (base == nullptr) {
+			return FLT_POSTOP_FINISHED_PROCESSING;
+		}
+
 		SharedLocker locker(g_State->Lock);
 		for (auto& name : g_State->Files) {
+			//
+			// look for a backslash so we can remove the final component
+			//
 			auto bs = wcsrchr(name, L'\\');
 			if (bs == nullptr)
 				continue;
@@ -188,25 +208,17 @@ FLT_POSTOP_CALLBACK_STATUS OnPostDirectoryControl(PFLT_CALLBACK_DATA Data, PCFLT
 			UNICODE_STRING copy;
 			copy.Buffer = name.Data();
 			copy.Length = USHORT(bs - name + 1) * sizeof(WCHAR);
-			if (copy.Length == sizeof(WCHAR) * 2)	// Drive+colon only
+			//
+			// copy now points to the parent directory
+			// by making its Length shorter
+			//
+			if (copy.Length == sizeof(WCHAR) * 2)	// Drive+colon only (e.g. C:)
 				copy.Length += sizeof(WCHAR);		// add the backslash
 
 			if (RtlEqualUnicodeString(&copy, &dosPath->Name, TRUE)) {
 				//
 				// parent directory. find last component
 				//
-				PUCHAR base = nullptr;
-				//
-				// use MDL if available
-				//
-				if (params.MdlAddress)
-					base = (PUCHAR)MmGetSystemAddressForMdlSafe(params.MdlAddress, NormalPagePriority);
-				if (!base)
-					base = (PUCHAR)params.DirectoryBuffer;
-				if (base == nullptr) {
-					return FLT_POSTOP_FINISHED_PROCESSING;
-				}
-
 				__try {
 					ULONG nextOffset = 0;
 					PUCHAR prev = nullptr;
@@ -282,7 +294,7 @@ FLT_PREOP_CALLBACK_STATUS OnPreDirectoryControl(PFLT_CALLBACK_DATA Data, PCFLT_R
 				//
 				// found directory. fail request
 				//
-				//KdPrint((DRIVER_PREFIX "Found: %wZ\n", path));
+				KdPrint((DRIVER_PREFIX "Found: %wZ\n", path));
 				Data->IoStatus.Status = STATUS_NOT_FOUND;
 				Data->IoStatus.Information = 0;
 				status = FLT_PREOP_COMPLETE;
