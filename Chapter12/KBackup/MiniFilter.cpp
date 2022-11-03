@@ -29,6 +29,7 @@ FLT_PREOP_CALLBACK_STATUS OnPreWrite(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJE
 FLT_POSTOP_CALLBACK_STATUS OnPostCleanup(_Inout_ PFLT_CALLBACK_DATA Data, _In_ PCFLT_RELATED_OBJECTS FltObjects, PVOID, FLT_POST_OPERATION_FLAGS flags);
 bool ShouldBackupFile(FilterFileNameInformation& nameInfo);
 NTSTATUS BackupFile(PUNICODE_STRING path, PCFLT_RELATED_OBJECTS FltObjects);
+NTSTATUS BackupFileWithSection(PUNICODE_STRING path, PCFLT_RELATED_OBJECTS FltObjects);
 
 NTSTATUS InitMiniFilter(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
 	HANDLE hKey = nullptr, hSubKey = nullptr;
@@ -89,6 +90,14 @@ NTSTATUS InitMiniFilter(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPat
 
 		ZwClose(hInstKey);
 
+		if (hSubKey) {
+			if (!NT_SUCCESS(status))
+				ZwDeleteKey(hSubKey);
+			ZwClose(hSubKey);
+		}
+		if (hKey)
+			ZwClose(hKey);
+
 		FLT_OPERATION_REGISTRATION const callbacks[] = {
 			{ IRP_MJ_CREATE, 0, nullptr, OnPostCreate },
 			{ IRP_MJ_WRITE, 0, OnPreWrite },
@@ -115,14 +124,6 @@ NTSTATUS InitMiniFilter(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPat
 		};
 		status = FltRegisterFilter(DriverObject, &reg, &g_Filter);
 	} while (false);
-
-	if (hSubKey) {
-		if (!NT_SUCCESS(status))
-			ZwDeleteKey(hSubKey);
-		ZwClose(hSubKey);
-	}
-	if (hKey)
-		ZwClose(hKey);
 
 	return status;
 }
@@ -403,6 +404,150 @@ NTSTATUS BackupFile(PUNICODE_STRING path, PCFLT_RELATED_OBJECTS FltObjects) {
 	return status;
 }
 
+NTSTATUS BackupFileWithSection(PUNICODE_STRING path, PCFLT_RELATED_OBJECTS FltObjects) {
+	LARGE_INTEGER fileSize;
+	auto status = FsRtlGetFileSize(FltObjects->FileObject, &fileSize);
+	if (!NT_SUCCESS(status) || fileSize.QuadPart == 0)
+		return status;
+
+	HANDLE hSourceFile = nullptr;
+	HANDLE hTargetFile = nullptr;
+	PFILE_OBJECT sourceFile = nullptr;
+	PFILE_OBJECT targetFile = nullptr;
+	IO_STATUS_BLOCK ioStatus;
+	HANDLE hSection = nullptr;
+
+	do {
+		//
+		// open source file
+		//
+		OBJECT_ATTRIBUTES sourceFileAttr;
+		InitializeObjectAttributes(&sourceFileAttr, path,
+			OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE, nullptr, nullptr);
+
+		status = FltCreateFileEx(
+			FltObjects->Filter,		// filter object
+			FltObjects->Instance,	// filter instance
+			&hSourceFile,			// resulting handle
+			&sourceFile,			// resulting file object
+			GENERIC_READ | SYNCHRONIZE, // access mask
+			&sourceFileAttr,		// object attributes
+			&ioStatus,				// resulting status
+			nullptr, FILE_ATTRIBUTE_NORMAL, 	// allocation size, file attributes
+			FILE_SHARE_READ | FILE_SHARE_WRITE,	// share flags
+			FILE_OPEN,			// create disposition
+			FILE_SYNCHRONOUS_IO_NONALERT | FILE_SEQUENTIAL_ONLY, // create options (sync I/O)
+			nullptr, 0,				// extended attributes, EA length
+			IO_IGNORE_SHARE_ACCESS_CHECK);	// flags
+		if (!NT_SUCCESS(status))
+			break;
+
+		//
+		// open target file
+		//
+		UNICODE_STRING targetFileName;
+		const WCHAR backupStream[] = L":backup";
+		targetFileName.MaximumLength = path->Length + sizeof(backupStream);
+		targetFileName.Buffer = (WCHAR*)ExAllocatePool2(POOL_FLAG_PAGED, targetFileName.MaximumLength, DRIVER_TAG);
+		if (targetFileName.Buffer == nullptr) {
+			status = STATUS_NO_MEMORY;
+			break;
+		}
+		RtlCopyUnicodeString(&targetFileName, path);
+		RtlAppendUnicodeToString(&targetFileName, backupStream);
+
+		OBJECT_ATTRIBUTES targetFileAttr;
+		InitializeObjectAttributes(&targetFileAttr, &targetFileName,
+			OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE, nullptr, nullptr);
+
+		status = FltCreateFileEx(
+			FltObjects->Filter,		// filter object
+			FltObjects->Instance,	// filter instance
+			&hTargetFile,			// resulting handle
+			&targetFile,			// resulting file object
+			GENERIC_WRITE | SYNCHRONIZE, // access mask
+			&targetFileAttr,		// object attributes
+			&ioStatus,				// resulting status
+			nullptr, FILE_ATTRIBUTE_NORMAL, 	// allocation size, file attributes
+			0,				// share flags
+			FILE_OVERWRITE_IF,		// create disposition
+			FILE_SYNCHRONOUS_IO_NONALERT | FILE_SEQUENTIAL_ONLY, // create options (sync I/O)
+			nullptr, 0,		// extended attributes, EA length
+			0);	// flags
+
+		ExFreePool(targetFileName.Buffer);
+		if (!NT_SUCCESS(status)) {
+			//
+			// could fail if a restore operation is in progress
+			//
+			break;
+		}
+
+		OBJECT_ATTRIBUTES sectionAttributes = RTL_CONSTANT_OBJECT_ATTRIBUTES(nullptr, OBJ_KERNEL_HANDLE);
+		status = ZwCreateSection(&hSection, SECTION_MAP_READ | SECTION_QUERY, &sectionAttributes,
+			nullptr, PAGE_READONLY, 0, hSourceFile);
+		if (!NT_SUCCESS(status))
+			break;
+
+		//
+		// loop - read from source, write to target
+		//
+		ULONG bytes;
+		LARGE_INTEGER offset{};
+		auto saveSize = fileSize;
+		PVOID buffer;
+		SIZE_T size = 1 << 20;
+		while (fileSize.QuadPart > 0) {
+			buffer = nullptr;
+			status = ZwMapViewOfSection(hSection, nullptr, &buffer, 0, 0, &offset, &size, ViewUnmap, 0, PAGE_READWRITE);
+			if (!NT_SUCCESS(status))
+				break;
+
+			bytes = (ULONG)min((LONGLONG)size, fileSize.QuadPart),	// # of bytes
+
+			status = FltWriteFile(
+				FltObjects->Instance,
+				targetFile,			// target file
+				nullptr,			// offset
+				bytes,				// bytes to write
+				buffer,				// data to write
+				0,					// flags
+				&bytes,			// written
+				nullptr, nullptr);	// no callback
+
+			ZwUnmapViewOfSection(nullptr, buffer);
+			if (!NT_SUCCESS(status))
+				break;
+
+			//
+			// update byte count remaining
+			//
+			fileSize.QuadPart -= bytes;
+			offset.QuadPart += bytes;
+		}
+		FILE_END_OF_FILE_INFORMATION info;
+		info.EndOfFile = saveSize;
+		status = FltSetInformationFile(FltObjects->Instance,
+			targetFile, &info, sizeof(info), FileEndOfFileInformation);
+	} while (false);
+
+	//
+	// cleanup
+	//
+	if (hSection)
+		ZwClose(hSection);
+	if (hSourceFile)
+		FltClose(hSourceFile);
+	if (hTargetFile)
+		FltClose(hTargetFile);
+	if (sourceFile)
+		ObDereferenceObject(sourceFile);
+	if (targetFile)
+		ObDereferenceObject(targetFile);
+
+	return status;
+}
+
 FLT_PREOP_CALLBACK_STATUS OnPreWrite(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJECTS FltObjects, PVOID*) {
 	//
 	// get the file context if exists
@@ -431,7 +576,7 @@ FLT_PREOP_CALLBACK_STATUS OnPreWrite(PFLT_CALLBACK_DATA Data, PCFLT_RELATED_OBJE
 		if (!name)
 			break;
 
-		status = BackupFile(&name->Name, FltObjects);
+		status = BackupFileWithSection(&name->Name, FltObjects);
 		if (!NT_SUCCESS(status)) {
 			KdPrint(("Failed to backup file! (0x%X)\n", status));
 		}

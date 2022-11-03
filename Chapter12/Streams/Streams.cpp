@@ -52,6 +52,8 @@ int wmain(int argc, const wchar_t* argv[]) {
 	for (int i = 1; i < argc - 1; i++) {
 		if (_wcsicmp(argv[i], L"-d") == 0)
 			display = true;
+		else if (argv[i][0] == L'-')
+			printf("Unknown switch %ws\n", argv[i]);
 		else
 			name = argv[i];
 	}
@@ -68,13 +70,14 @@ int wmain(int argc, const wchar_t* argv[]) {
 	if(name)
 		name2 = std::wstring(L":") + name + L":";
 	do {
-		if(_wcsnicmp(data.cStreamName, L"::", 2) != 0 && (name == nullptr || _wcsnicmp(name2.c_str(), data.cStreamName, name2.length()) == 0))
+		if(_wcsnicmp(data.cStreamName, L"::", 2) != 0 && 
+			(name == nullptr || _wcsnicmp(name2.c_str(), data.cStreamName, name2.length()) == 0))
 		streams.push_back(StreamInfo{ data.cStreamName, data.StreamSize.QuadPart });
 	} while (FindNextStreamW(hFind, &data));
 	FindClose(hFind);
 
 	if (streams.empty())
-		printf("No alternate streams found\n");
+		printf("No alternate streams found.\n");
 	else {
 		for (auto& stm : streams)
 			PrintStream(path, stm, display);

@@ -9,7 +9,7 @@ int Error(const char* text) {
 
 int wmain(int argc, const wchar_t* argv[]) {
 	if (argc < 2) {
-		printf("Usage: FileRestore <filename>\n");
+		printf("Usage: Restore <filename>\n");
 		return 0;
 	}
 
