@@ -418,9 +418,6 @@ NTSTATUS BackupFileWithSection(PUNICODE_STRING path, PCFLT_RELATED_OBJECTS FltOb
 	HANDLE hSection = nullptr;
 
 	do {
-		//
-		// open source file
-		//
 		OBJECT_ATTRIBUTES sourceFileAttr;
 		InitializeObjectAttributes(&sourceFileAttr, path,
 			OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE, nullptr, nullptr);
@@ -485,45 +482,42 @@ NTSTATUS BackupFileWithSection(PUNICODE_STRING path, PCFLT_RELATED_OBJECTS FltOb
 
 		OBJECT_ATTRIBUTES sectionAttributes = RTL_CONSTANT_OBJECT_ATTRIBUTES(nullptr, OBJ_KERNEL_HANDLE);
 		status = ZwCreateSection(&hSection, SECTION_MAP_READ | SECTION_QUERY, &sectionAttributes,
-			nullptr, PAGE_READONLY, 0, hSourceFile);
-		if (!NT_SUCCESS(status))
+			nullptr, PAGE_READONLY, SEC_COMMIT, hSourceFile);
+		if (!NT_SUCCESS(status)) {
+			KdPrint((DRIVER_PREFIX "Failed in ZwCreateSection (0x%X)\n", status));
 			break;
+		}
 
-		//
-		// loop - read from source, write to target
-		//
-		ULONG bytes;
 		LARGE_INTEGER offset{};
 		auto saveSize = fileSize;
 		PVOID buffer;
 		SIZE_T size = 1 << 20;
 		while (fileSize.QuadPart > 0) {
 			buffer = nullptr;
-			status = ZwMapViewOfSection(hSection, nullptr, &buffer, 0, 0, &offset, &size, ViewUnmap, 0, PAGE_READWRITE);
-			if (!NT_SUCCESS(status))
+			SIZE_T bytes = min((LONGLONG)size, fileSize.QuadPart);
+			status = ZwMapViewOfSection(hSection, NtCurrentProcess(), &buffer, 0, 0, &offset, &bytes, ViewUnmap, 0, PAGE_READONLY);
+			if (!NT_SUCCESS(status)) {
+				KdPrint((DRIVER_PREFIX "Failed in ZwMapViewOfSection (0x%X)\n", status));
 				break;
+			}
 
-			bytes = (ULONG)min((LONGLONG)size, fileSize.QuadPart),	// # of bytes
-
+			ULONG written;
 			status = FltWriteFile(
 				FltObjects->Instance,
 				targetFile,			// target file
 				nullptr,			// offset
-				bytes,				// bytes to write
+				(ULONG)bytes,		// bytes to write
 				buffer,				// data to write
 				0,					// flags
-				&bytes,			// written
+				&written,			// written
 				nullptr, nullptr);	// no callback
 
-			ZwUnmapViewOfSection(nullptr, buffer);
+			ZwUnmapViewOfSection(NtCurrentProcess(), buffer);
 			if (!NT_SUCCESS(status))
 				break;
 
-			//
-			// update byte count remaining
-			//
-			fileSize.QuadPart -= bytes;
-			offset.QuadPart += bytes;
+			fileSize.QuadPart -= written;
+			offset.QuadPart += written;
 		}
 		FILE_END_OF_FILE_INFORMATION info;
 		info.EndOfFile = saveSize;
