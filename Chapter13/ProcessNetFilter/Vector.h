@@ -4,11 +4,13 @@
 #define DRIVER_TAG 'dltk'
 #endif
 
+#include "Memory.h"
+
 #ifdef KTL_NAMESPACE
 namespace ktl {
 #endif
 
-	template<typename T, POOL_FLAGS Pool, ULONG Tag = DRIVER_TAG>
+	template<typename T, PoolType Pool, ULONG Tag = DRIVER_TAG>
 	class Vector {
 	public:
 		struct Iterator {
@@ -46,7 +48,7 @@ namespace ktl {
 			m_Capacity = capacity;
 			m_Size = 0;
 			if (capacity) {
-				m_pData = static_cast<T*>(ExAllocatePool2(Pool, sizeof(T) * capacity, Tag));
+				m_pData = static_cast<T*>(ExAllocatePool2(static_cast<POOL_FLAGS>(Pool), sizeof(T) * capacity, Tag));
 				if (!m_pData)
 					::ExRaiseStatus(STATUS_NO_MEMORY);
 			}
@@ -55,7 +57,7 @@ namespace ktl {
 			}
 		}
 		Vector(Vector const& other) : m_Capacity(other.Size()) {
-			m_pData = new T[m_Size = m_Capacity];
+			m_pData = static_cast<T*>(ExAllocatePool2(Pool, (m_Size = m_Capacity) * sizeof(T), Tag));
 			if (!m_pData)
 				::ExRaiseStatus(STATUS_NO_MEMORY);
 			memcpy(m_pData, other.m_pData, sizeof(T) * m_Size);
@@ -65,7 +67,7 @@ namespace ktl {
 			if (this != other) {
 				Free();
 				m_Capacity = other.m_Capacity;
-				m_pData = new T[m_Size = m_Capacity];
+				m_pData = static_cast<T*>(ExAllocatePool2(Pool, (m_Size = m_Capacity) * sizeof(T), Tag));
 				if (!m_pData)
 					::ExRaiseStatus(STATUS_NO_MEMORY);
 				memcpy(m_pData, other.m_pData, sizeof(T) * m_Size);
@@ -190,7 +192,7 @@ namespace ktl {
 
 		void Resize(ULONG newSize) {
 			m_Capacity = newSize;
-			auto data = static_cast<T*>(ExAllocatePool2(Pool, sizeof(T) * newSize, Tag));
+			auto data = static_cast<T*>(ExAllocatePool2(static_cast<POOL_FLAGS>(Pool), sizeof(T) * newSize, Tag));
 			if (data == nullptr)
 				::ExRaiseStatus(STATUS_NO_MEMORY);
 			if (m_pData) {
