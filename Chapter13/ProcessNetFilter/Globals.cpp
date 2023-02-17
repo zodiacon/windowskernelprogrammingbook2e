@@ -26,15 +26,33 @@ Globals& Globals::Get() {
 }
 
 Globals::~Globals() {
-	FwpsCalloutUnregisterByKey(&GUID_CALLOUT_PROCESS_BLOCK);
+	const GUID* guids[] = {
+		&GUID_CALLOUT_PROCESS_BLOCK_V4,
+		&GUID_CALLOUT_PROCESS_BLOCK_V6,
+		&GUID_CALLOUT_PROCESS_BLOCK_UDP_V4,
+		&GUID_CALLOUT_PROCESS_BLOCK_UDP_V6,
+	};
+	for(auto& guid : guids)
+		FwpsCalloutUnregisterByKey(guid);
 }
 
 NTSTATUS Globals::RegisterCallouts(PDEVICE_OBJECT devObj) {
-	FWPS_CALLOUT callout{};
-	callout.calloutKey = GUID_CALLOUT_PROCESS_BLOCK;
-	callout.notifyFn = OnCalloutNotify;
-	callout.classifyFn = OnCalloutClassify;
-	return FwpsCalloutRegister(devObj, &callout, nullptr);
+	const GUID* guids[] = {
+		&GUID_CALLOUT_PROCESS_BLOCK_V4,
+		&GUID_CALLOUT_PROCESS_BLOCK_V6,
+		&GUID_CALLOUT_PROCESS_BLOCK_UDP_V4,
+		&GUID_CALLOUT_PROCESS_BLOCK_UDP_V6,
+	};
+	NTSTATUS status = STATUS_SUCCESS;
+
+	for (auto& guid : guids) {
+		FWPS_CALLOUT callout{};
+		callout.calloutKey = *guid;
+		callout.notifyFn = OnCalloutNotify;
+		callout.classifyFn = OnCalloutClassify;
+		status |= FwpsCalloutRegister(devObj, &callout, nullptr);
+	}
+	return status;
 }
 
 NTSTATUS Globals::AddProcess(ULONG pid) {
@@ -113,6 +131,7 @@ void Globals::DoCalloutClassify(const FWPS_INCOMING_VALUES* inFixedValues, const
 		// block
 		//
 		classifyOut->actionType = FWP_ACTION_BLOCK;
+		classifyOut->rights &= ~FWPS_RIGHT_ACTION_WRITE;
 		KdPrint((DRIVER_PREFIX "Blocked process %u\n", (ULONG)inMetaValues->processId));
 	}
 }
