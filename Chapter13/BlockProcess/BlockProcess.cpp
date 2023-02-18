@@ -10,6 +10,15 @@
 DEFINE_GUID(WFP_PROVIDER_CHAPTER13,
 	0x7672d055, 0x3c0, 0x43f1, 0x9e, 0x31, 0x3, 0x92, 0x85, 0xb, 0xd0, 0x7f);
 
+// {C5C2DEC4-C0CD-4187-9BE9-C749ED53549D}
+DEFINE_GUID(GUID_FILTER_V4, 0xc5c2dec4, 0xc0cd, 0x4187, 0x9b, 0xe9, 0xc7, 0x49, 0xed, 0x53, 0x54, 0x9d);
+// {9E99EFD3-8E9E-496B-8F6D-63A69D2E84A7}
+DEFINE_GUID(GUID_FILTER_V6, 0x9e99efd3, 0x8e9e, 0x496b, 0x8f, 0x6d, 0x63, 0xa6, 0x9d, 0x2e, 0x84, 0xa7);
+// {EE870CB6-7D26-4580-A8F4-8CA7783A98F9}
+DEFINE_GUID(GUID_FILTER_UDP_V4, 0xee870cb6, 0x7d26, 0x4580, 0xa8, 0xf4, 0x8c, 0xa7, 0x78, 0x3a, 0x98, 0xf9);
+// {C8EB1629-B3C7-4A37-95F5-1DA3495EC8F5}
+DEFINE_GUID(GUID_FILTER_UDP_V6, 0xc8eb1629, 0xb3c7, 0x4a37, 0x95, 0xf5, 0x1d, 0xa3, 0x49, 0x5e, 0xc8, 0xf5);
+
 DWORD RegisterProvider() {
 	HANDLE hEngine;
 	DWORD error = FwpmEngineOpen(nullptr, RPC_C_AUTHN_DEFAULT, nullptr, nullptr, &hEngine);
@@ -34,38 +43,34 @@ DWORD RegisterProvider() {
 	return error;
 }
 
-int DeleteFilters() {
-	//
-	// enumerate filter, look for our provider
-	//
+bool DeleteFilters() {
 	HANDLE hEngine;
 	DWORD error = FwpmEngineOpen(nullptr, RPC_C_AUTHN_DEFAULT, nullptr, nullptr, &hEngine);
 	if (error)
-		return 0;
+		return false;
 
-	HANDLE hEnum;
-	error = FwpmFilterCreateEnumHandle(hEngine, nullptr, &hEnum);
-	if (error)
-		return 0;
+	FwpmFilterDeleteByKey(hEngine, &GUID_FILTER_V4);
+	FwpmFilterDeleteByKey(hEngine, &GUID_FILTER_V6);
+	FwpmFilterDeleteByKey(hEngine, &GUID_FILTER_UDP_V4);
+	FwpmFilterDeleteByKey(hEngine, &GUID_FILTER_UDP_V6);
 
-	UINT32 count;
-	FWPM_FILTER** filters;
-	error = FwpmFilterEnum(hEngine, hEnum, 8192, &filters, &count);
-	if (error)
-		return 0;
-
-	int deleted = 0;
-	for (UINT32 i = 0; i < count; i++) {
-		auto f = filters[i];
-		if (f->providerKey && *f->providerKey == WFP_PROVIDER_CHAPTER13) {
-			FwpmFilterDeleteByKey(hEngine, &f->filterKey);
-			deleted++;
-		}
-	}
-	FwpmFreeMemory((void**)&filters);
-	FwpmFilterDestroyEnumHandle(hEngine, hEnum);
 	FwpmEngineClose(hEngine);
-	return deleted;
+	return true;
+}
+
+bool DeleteCallouts() {
+	HANDLE hEngine;
+	DWORD error = FwpmEngineOpen(nullptr, RPC_C_AUTHN_DEFAULT, nullptr, nullptr, &hEngine);
+	if (error)
+		return false;
+
+	FwpmCalloutDeleteByKey(hEngine, &GUID_CALLOUT_PROCESS_BLOCK_V4);
+	FwpmCalloutDeleteByKey(hEngine, &GUID_CALLOUT_PROCESS_BLOCK_V6);
+	FwpmCalloutDeleteByKey(hEngine, &GUID_CALLOUT_PROCESS_BLOCK_UDP_V4);
+	FwpmCalloutDeleteByKey(hEngine, &GUID_CALLOUT_PROCESS_BLOCK_UDP_V6);
+
+	FwpmEngineClose(hEngine);
+	return true;
 }
 
 bool AddCallouts() {
@@ -116,6 +121,22 @@ bool AddFilters() {
 		return false;
 
 	do {
+		if (FWPM_FILTER* filter; FwpmFilterGetByKey(hEngine, &GUID_FILTER_V4, &filter) == ERROR_SUCCESS) {
+			FwpmFreeMemory((void**)&filter);
+			break;
+		}
+
+		static const struct {
+			const GUID* guid;
+			const GUID* layer;
+			const GUID* callout;
+		} filters[] = {
+			{ &GUID_FILTER_V4, &FWPM_LAYER_ALE_AUTH_CONNECT_V4, &GUID_CALLOUT_PROCESS_BLOCK_V4 },
+			{ &GUID_FILTER_V6, &FWPM_LAYER_ALE_AUTH_CONNECT_V6, &GUID_CALLOUT_PROCESS_BLOCK_V6 },
+			{ &GUID_FILTER_UDP_V4, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4, &GUID_CALLOUT_PROCESS_BLOCK_UDP_V4 },
+			{ &GUID_FILTER_UDP_V6, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6, &GUID_CALLOUT_PROCESS_BLOCK_UDP_V6 },
+		};
+
 		//
 		// begin a transaction
 		// 
@@ -123,48 +144,23 @@ bool AddFilters() {
 		if (error)
 			break;
 
-		//
-		// add filter for TCP/IPv4
-		//
-		FWPM_FILTER filter{};
-		filter.providerKey = (GUID*)&WFP_PROVIDER_CHAPTER13;
-		WCHAR filterName[] = L"Block filter based on PID";
-		filter.displayData.name = filterName;
-		UINT64 weight = 8;
-		filter.weight.uint64 = &weight;
-		filter.weight.type = FWP_UINT64;
-		filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
-		filter.action.type = FWP_ACTION_CALLOUT_UNKNOWN;
-		filter.action.calloutKey = GUID_CALLOUT_PROCESS_BLOCK_V4;
-		error = FwpmFilterAdd(hEngine, &filter, nullptr, nullptr);
-		if (error)
-			break;
-
-		//
-		// add another filter for TCP/IPv6
-		//
-		filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V6;
-		filter.action.calloutKey = GUID_CALLOUT_PROCESS_BLOCK_V6;
-		FwpmFilterAdd(hEngine, &filter, nullptr, nullptr);
-
-		//
-		// add filters for UDP as well
-		//
-		filter.layerKey = FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4;
-		filter.action.calloutKey = GUID_CALLOUT_PROCESS_BLOCK_UDP_V4;
-		FwpmFilterAdd(hEngine, &filter, nullptr, nullptr);
-
-		filter.layerKey = FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6;
-		filter.action.calloutKey = GUID_CALLOUT_PROCESS_BLOCK_UDP_V6;
-		FwpmFilterAdd(hEngine, &filter, nullptr, nullptr);
-
+		for (auto& fi : filters) {
+			FWPM_FILTER filter{};
+			filter.filterKey = *fi.guid;
+			filter.providerKey = (GUID*)&WFP_PROVIDER_CHAPTER13;
+			WCHAR filterName[] = L"Block filter based on PID";
+			filter.displayData.name = filterName;
+			filter.weight.uint8 = 8;
+			filter.weight.type = FWP_UINT8;
+			filter.layerKey = *fi.layer;
+			filter.action.type = FWP_ACTION_CALLOUT_UNKNOWN;
+			filter.action.calloutKey = *fi.callout;
+			FwpmFilterAdd(hEngine, &filter, nullptr, nullptr);
+		}
 		error = FwpmTransactionCommit(hEngine);
 	} while (false);
 
 	FwpmEngineClose(hEngine);
-
-	if (error)
-		printf("WFP Error: 0x%X\n", error);
 
 	return error == ERROR_SUCCESS;
 }
@@ -189,6 +185,7 @@ bool PermitProcess(HANDLE hDevice, DWORD pid) {
 
 bool ClearAll(HANDLE hDevice) {
 	DeleteFilters();
+	DeleteCallouts();
 	DWORD ret;
 	return DeviceIoControl(hDevice, IOCTL_PNF_CLEAR, nullptr, 0, nullptr, 0, &ret, nullptr);
 }

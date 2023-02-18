@@ -66,7 +66,8 @@ NTSTATUS Globals::AddProcess(ULONG pid) {
 
 	{
 		Locker locker(m_ProcessesLock);
-		m_Processes.Add(pid);
+		if(!m_Processes.Contains(pid))
+			m_Processes.Add(pid);
 	}
 	ObDereferenceObject(process);
 	return STATUS_SUCCESS;
