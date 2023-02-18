@@ -79,20 +79,23 @@ bool AddCallouts() {
 			FwpmFreeMemory((void**)&callout);
 			break;
 		}
-		const GUID* guids[] = {
-			&GUID_CALLOUT_PROCESS_BLOCK_V4,
-			&GUID_CALLOUT_PROCESS_BLOCK_V6,
-			&GUID_CALLOUT_PROCESS_BLOCK_UDP_V4,
-			&GUID_CALLOUT_PROCESS_BLOCK_UDP_V6,
+		const struct {
+			const GUID* guid;
+			const GUID* layer;
+		} callouts[] = {
+			{ &GUID_CALLOUT_PROCESS_BLOCK_V4, &FWPM_LAYER_ALE_AUTH_CONNECT_V4 },
+			{ &GUID_CALLOUT_PROCESS_BLOCK_V6, &FWPM_LAYER_ALE_AUTH_CONNECT_V6 },
+			{ &GUID_CALLOUT_PROCESS_BLOCK_UDP_V4, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V4 },
+			{ &GUID_CALLOUT_PROCESS_BLOCK_UDP_V6, &FWPM_LAYER_ALE_RESOURCE_ASSIGNMENT_V6 },
 		};
 
 		error = FwpmTransactionBegin(hEngine, 0);
 		if (error) break;
 
-		for (auto& guid : guids) {
+		for (auto& co : callouts) {
 			FWPM_CALLOUT callout{};
-			callout.applicableLayer = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
-			callout.calloutKey = *guid;
+			callout.applicableLayer = *co.layer;
+			callout.calloutKey = *co.guid;
 			WCHAR name[] = L"Block PID callout";
 			callout.displayData.name = name;
 			callout.providerKey = (GUID*)&WFP_PROVIDER_CHAPTER13;
@@ -196,16 +199,17 @@ int main(int argc, const char* argv[]) {
 		return 0;
 	}
 
+	if (DWORD error = RegisterProvider(); error != ERROR_SUCCESS) {
+		printf("Error registering provider (%u)\n", error);
+		return 1;
+	}
+
 	HANDLE hDevice = CreateFile(L"\\\\.\\ProcNetFilter", GENERIC_WRITE | GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
 	if (hDevice == INVALID_HANDLE_VALUE) {
 		printf("Error opening device (%u)\n", GetLastError());
 		return 1;
 	}
 
-	if (DWORD error = RegisterProvider(); error != ERROR_SUCCESS) {
-		printf("Error registering provider (%u)\n", error);
-		return 1;
-	}
 	if (!AddCallouts()) {
 		printf("Error adding callouts\n");
 		return 1;

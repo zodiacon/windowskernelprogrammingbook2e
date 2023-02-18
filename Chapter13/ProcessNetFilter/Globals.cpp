@@ -131,6 +131,10 @@ void Globals::DoCalloutClassify(const FWPS_INCOMING_VALUES* inFixedValues, const
 		// block
 		//
 		classifyOut->actionType = FWP_ACTION_BLOCK;
+
+		//
+		// ask other filters from overriding the block
+		//
 		classifyOut->rights &= ~FWPS_RIGHT_ACTION_WRITE;
 		KdPrint((DRIVER_PREFIX "Blocked process %u\n", (ULONG)inMetaValues->processId));
 	}
