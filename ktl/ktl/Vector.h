@@ -8,7 +8,7 @@
 namespace ktl {
 #endif
 
-	template<typename T, POOL_FLAGS Pool, ULONG Tag = DRIVER_TAG>
+	template<typename T, PoolType Pool, ULONG Tag = DRIVER_TAG>
 	class Vector {
 	public:
 		struct Iterator {
@@ -46,7 +46,7 @@ namespace ktl {
 			m_Capacity = capacity;
 			m_Size = 0;
 			if (capacity) {
-				m_pData = static_cast<T*>(ExAllocatePool2(Pool, sizeof(T) * capacity, Tag));
+				m_pData = static_cast<T*>(ExAllocatePool2(static_cast<POOL_FLAGS>(Pool), sizeof(T) * capacity, Tag));
 				if (!m_pData)
 					::ExRaiseStatus(STATUS_NO_MEMORY);
 			}
@@ -190,7 +190,7 @@ namespace ktl {
 
 		void Resize(ULONG newSize) {
 			m_Capacity = newSize;
-			auto data = static_cast<T*>(ExAllocatePool2(Pool, sizeof(T) * newSize, Tag));
+			auto data = static_cast<T*>(ExAllocatePool2(static_cast<POOL_FLAGS>(Pool), sizeof(T) * newSize, Tag));
 			if (data == nullptr)
 				::ExRaiseStatus(STATUS_NO_MEMORY);
 			if (m_pData) {
