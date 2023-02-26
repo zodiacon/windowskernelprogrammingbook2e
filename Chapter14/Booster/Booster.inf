@@ -1,0 +1,77 @@
+;
+; Booster.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=System ; TODO: specify appropriate Class
+ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318} ; TODO: specify appropriate ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=Booster.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+PnpLockdown=1
+
+[DestinationDirs]
+DefaultDestDir = 12
+Booster_Device_CoInstaller_CopyFiles = 11
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+Booster.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%Booster.DeviceDesc%=Booster_Device, Root\Booster ; TODO: edit hw-id
+
+[Booster_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+Booster.sys
+
+;-------------- Service installation
+[Booster_Device.NT.Services]
+AddService = Booster,%SPSVCINST_ASSOCSERVICE%, Booster_Service_Inst
+
+; -------------- Booster driver install sections
+[Booster_Service_Inst]
+DisplayName    = %Booster.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\Booster.sys
+
+;
+;--- Booster_Device Coinstaller installation ------
+;
+
+[Booster_Device.NT.CoInstallers]
+AddReg=Booster_Device_CoInstaller_AddReg
+CopyFiles=Booster_Device_CoInstaller_CopyFiles
+
+[Booster_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[Booster_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[Booster_Device.NT.Wdf]
+KmdfService =  Booster, Booster_wdfsect
+[Booster_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="Pavel Yosifovich" ;TODO: Replace with your manufacturer name
+DiskName = "Booster Installation Disk"
+Booster.DeviceDesc = "Booster Device"
+Booster.SVCDESC = "Booster Service"
