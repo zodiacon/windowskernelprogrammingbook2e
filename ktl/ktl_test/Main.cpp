@@ -1,7 +1,7 @@
-#include <ntddk.h>
+#include <ntifs.h>
+#include <fltKernel.h>
 #define DRIVER_TAG 'ltkt'
 #include "..\ktl\ktl.h"
-
 
 using String = PWString<DRIVER_TAG>;
 
@@ -12,7 +12,7 @@ NTSTATUS TestCreateClose(PDEVICE_OBJECT, PIRP Irp);
 NTSTATUS TestDeviceControl(PDEVICE_OBJECT, PIRP Irp);
 
 extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
-	g_RegPath = new (PagedPool) String(RegistryPath);
+	g_RegPath = new (PoolType::Paged) String(RegistryPath);
 
 	DriverObject->DriverUnload = TestUnload;
 
