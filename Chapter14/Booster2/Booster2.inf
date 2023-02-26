@@ -1,0 +1,85 @@
+;
+; Booster2.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=BoosterDevice 
+ClassGuid={AE4151AF-8C29-41C3-BB16-0B3115733333}
+Provider=%ManufacturerName%
+CatalogFile=Booster2.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+PnpLockdown=1
+
+[DestinationDirs]
+DefaultDestDir = 12
+Booster2_Device_CoInstaller_CopyFiles = 11
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+Booster2.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+; define new device class
+[ClassInstall32]
+AddReg=DevClass_AddReg
+
+[DevClass_AddReg]
+HKR,,,,BoosterDevice
+HKR,,SilentInstall,,1
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%Booster2.DeviceDesc%=Booster2_Device, Root\Booster2 ; TODO: edit hw-id
+
+[Booster2_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+Booster2.sys
+
+;-------------- Service installation
+[Booster2_Device.NT.Services]
+AddService = Booster2,%SPSVCINST_ASSOCSERVICE%, Booster2_Service_Inst
+
+; -------------- Booster2 driver install sections
+[Booster2_Service_Inst]
+DisplayName    = %Booster2.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\Booster2.sys
+
+;
+;--- Booster2_Device Coinstaller installation ------
+;
+
+[Booster2_Device.NT.CoInstallers]
+AddReg=Booster2_Device_CoInstaller_AddReg
+CopyFiles=Booster2_Device_CoInstaller_CopyFiles
+
+[Booster2_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[Booster2_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[Booster2_Device.NT.Wdf]
+KmdfService =  Booster2, Booster2_wdfsect
+[Booster2_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+DiskName = "Booster2 Installation Disk"
+Booster2.DeviceDesc = "Booster2 Device"
+Booster2.SVCDESC = "Booster2 Service"

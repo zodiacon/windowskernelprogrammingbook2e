@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Booster", "Booster\Booster.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Boost", "Boost\Boost.vcxproj", "{ABA04BF2-0C33-4677-8C9F-F7320CB35360}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Booster2", "Booster2\Booster2.vcxproj", "{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM64 = Debug|ARM64
@@ -47,6 +49,24 @@ Global
 		{ABA04BF2-0C33-4677-8C9F-F7320CB35360}.Release|x64.Build.0 = Release|x64
 		{ABA04BF2-0C33-4677-8C9F-F7320CB35360}.Release|x86.ActiveCfg = Release|Win32
 		{ABA04BF2-0C33-4677-8C9F-F7320CB35360}.Release|x86.Build.0 = Release|Win32
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Debug|ARM64.Build.0 = Debug|ARM64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Debug|ARM64.Deploy.0 = Debug|ARM64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Debug|x64.ActiveCfg = Debug|x64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Debug|x64.Build.0 = Debug|x64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Debug|x64.Deploy.0 = Debug|x64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Debug|x86.ActiveCfg = Debug|x64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Debug|x86.Build.0 = Debug|x64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Debug|x86.Deploy.0 = Debug|x64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Release|ARM64.ActiveCfg = Release|ARM64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Release|ARM64.Build.0 = Release|ARM64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Release|ARM64.Deploy.0 = Release|ARM64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Release|x64.ActiveCfg = Release|x64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Release|x64.Build.0 = Release|x64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Release|x64.Deploy.0 = Release|x64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Release|x86.ActiveCfg = Release|x64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Release|x86.Build.0 = Release|x64
+		{FBCE4CF6-9B65-43CF-B1E7-D64443E3E34D}.Release|x86.Deploy.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
