@@ -44,7 +44,7 @@ void EnumProcesses() {
     ZwQuerySystemInformation(SystemProcessInformation, nullptr, 0, &size);
     size += 1 << 12;
 
-    auto buffer = ExAllocatePoolWithTag(PagedPool, size, 'cprP');
+    auto buffer = ExAllocatePool2(POOL_FLAG_PAGED, size, 'cprP');
     if (!buffer)
         return;
 
