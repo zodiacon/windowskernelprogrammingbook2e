@@ -69,7 +69,9 @@ DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 	return status;
 }
 
-NTSTATUS CompleteRequest(PIRP Irp, NTSTATUS status, ULONG_PTR info) {
+NTSTATUS CompleteRequest(PIRP Irp,
+	NTSTATUS status = STATUS_SUCCESS,
+	ULONG_PTR info = 0) {
 	Irp->IoStatus.Status = status;
 	Irp->IoStatus.Information = info;
 	IoCompleteRequest(Irp, IO_NO_INCREMENT);
