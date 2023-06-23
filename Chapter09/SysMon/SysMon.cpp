@@ -150,7 +150,7 @@ void OnProcessNotify(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO
 			commandLineSize = CreateInfo->CommandLine->Length;
 			allocSize += commandLineSize;
 		}
-		auto info = (FullItem<ProcessCreateInfo>*)ExAllocatePoolWithTag(PagedPool, allocSize, DRIVER_TAG);
+		auto info = (FullItem<ProcessCreateInfo>*)ExAllocatePool2(POOL_FLAG_PAGED, allocSize, DRIVER_TAG);
 		if (info == nullptr) {
 			KdPrint((DRIVER_PREFIX "failed allocation\n"));
 			return;
@@ -179,7 +179,7 @@ void OnProcessNotify(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO
 		//
 		// process exited
 		//
-		auto info = (FullItem<ProcessExitInfo>*)ExAllocatePoolWithTag(PagedPool, sizeof(FullItem<ProcessExitInfo>), DRIVER_TAG);
+		auto info = (FullItem<ProcessExitInfo>*)ExAllocatePool2(POOL_FLAG_PAGED, sizeof(FullItem<ProcessExitInfo>), DRIVER_TAG);
 		if (info == nullptr) {
 			KdPrint((DRIVER_PREFIX "failed allocation\n"));
 			return;
@@ -199,7 +199,7 @@ void OnProcessNotify(PEPROCESS Process, HANDLE ProcessId, PPS_CREATE_NOTIFY_INFO
 _Use_decl_annotations_
 void OnThreadNotify(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create) {
 	auto size = Create ? sizeof(FullItem<ThreadCreateInfo>) : sizeof(FullItem<ThreadExitInfo>);
-	auto info = (FullItem<ThreadExitInfo>*)ExAllocatePoolWithTag(PagedPool, size, DRIVER_TAG);
+	auto info = (FullItem<ThreadExitInfo>*)ExAllocatePool2(POOL_FLAG_PAGED, size, DRIVER_TAG);
 	if (info == nullptr) {
 		KdPrint((DRIVER_PREFIX "Failed to allocate memory\n"));
 		return;
@@ -228,7 +228,7 @@ void OnImageLoadNotify(PUNICODE_STRING FullImageName, HANDLE ProcessId, PIMAGE_I
 	}
 
 	auto size = sizeof(FullItem<ImageLoadInfo>);
-	auto info = (FullItem<ImageLoadInfo>*)ExAllocatePoolWithTag(PagedPool, size, DRIVER_TAG);
+	auto info = (FullItem<ImageLoadInfo>*)ExAllocatePool2(POOL_FLAG_PAGED, size, DRIVER_TAG);
 	if (info == nullptr) {
 		KdPrint((DRIVER_PREFIX "Failed to allocate memory\n"));
 		return;
