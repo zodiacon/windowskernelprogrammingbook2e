@@ -59,14 +59,14 @@ namespace ktl {
 			return link == &m_head ? nullptr : CONTAINING_RECORD(link, T, Link);
 		}
 
-		T* GetHead() const {
+		T const* GetHead() const {
 			Locker locker(m_lock);
 			if (m_count == 0)
 				return nullptr;
 			return CONTAINING_RECORD(m_head.Flink, T, Link);
 		}
 
-		T* GetTail() const {
+		T const* GetTail() const {
 			Locker locker(m_lock);
 			if (m_count == 0)
 				return nullptr;
@@ -102,7 +102,7 @@ namespace ktl {
 
 	private:
 		LIST_ENTRY m_head;
-		TLock m_lock;
+		mutable TLock m_lock;
 		ULONG m_count;
 	};
 

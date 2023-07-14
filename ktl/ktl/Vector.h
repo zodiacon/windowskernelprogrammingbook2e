@@ -1,18 +1,14 @@
 #pragma once
 
-#ifndef DRIVER_TAG
-#define DRIVER_TAG 'dltk'
-#endif
-
 #ifdef KTL_NAMESPACE
 namespace ktl {
 #endif
 
-	template<typename T, PoolType Pool, ULONG Tag = DRIVER_TAG>
+	template<typename T, PoolType Pool, ULONG Tag>
 	class Vector {
 	public:
 		struct Iterator {
-			Iterator(Vector& v, ULONG const index) : m_vector(v), m_index(index) {}
+			Iterator(Vector const& v, ULONG const index) : m_vector(v), m_index(index) {}
 			Iterator& operator++() {
 				++m_index;
 				return *this;
@@ -33,13 +29,9 @@ namespace ktl {
 				return m_vector[m_index];
 			}
 
-			T& operator*() {
-				return m_vector[m_index];
-			}
-
 		private:
 			ULONG m_index;
-			Vector& m_vector;
+			Vector const& m_vector;
 		};
 
 		explicit Vector(ULONG capacity = 0) {
@@ -47,6 +39,8 @@ namespace ktl {
 			m_Size = 0;
 			if (capacity) {
 				m_pData = static_cast<T*>(ExAllocatePool2(static_cast<POOL_FLAGS>(Pool), sizeof(T) * capacity, Tag));
+				new (m_pData) T[capacity];
+
 				if (!m_pData)
 					::ExRaiseStatus(STATUS_NO_MEMORY);
 			}
@@ -55,20 +49,23 @@ namespace ktl {
 			}
 		}
 		Vector(Vector const& other) : m_Capacity(other.Size()) {
-			m_pData = new T[m_Size = m_Capacity];
+			m_Size = m_Capacity;
+			m_pData = static_cast<T*>(ExAllocatePool2(static_cast<POOL_FLAGS>(Pool), sizeof(T) * m_Size, Tag));
 			if (!m_pData)
 				::ExRaiseStatus(STATUS_NO_MEMORY);
-			memcpy(m_pData, other.m_pData, sizeof(T) * m_Size);
+			for (ULONG i = 0; i < m_Size; i++)
+				new (m_pData + i) T(other.m_pData[i]);
 		}
 
 		Vector& operator=(Vector const& other) {
 			if (this != other) {
 				Free();
-				m_Capacity = other.m_Capacity;
-				m_pData = new T[m_Size = m_Capacity];
+				m_Size = m_Capacity;
+				m_pData = static_cast<T*>(ExAllocatePool2(static_cast<POOL_FLAGS>(Pool), sizeof(T) * m_Size, Tag));
 				if (!m_pData)
 					::ExRaiseStatus(STATUS_NO_MEMORY);
-				memcpy(m_pData, other.m_pData, sizeof(T) * m_Size);
+				for (ULONG i = 0; i < m_Size; i++)
+					new (m_pData + i) T(other.m_pData[i]);
 			}
 			return *this;
 		}
@@ -118,6 +115,14 @@ namespace ktl {
 		}
 
 		Iterator end() {
+			return Iterator(*this, m_Size);
+		}
+
+		Iterator begin() const {
+			return Iterator(*this, 0U);
+		}
+
+		Iterator end() const {
 			return Iterator(*this, m_Size);
 		}
 
@@ -183,12 +188,19 @@ namespace ktl {
 			if (index >= m_Size)
 				return false;
 
+			m_pData[index].~T();
 			memmove(m_pData + index, m_pData + index + 1, (m_Size - index - 1) * sizeof(T));
 			m_Size--;
 			return true;
 		}
 
 		void Resize(ULONG newSize) {
+			if (newSize <= m_Capacity) {
+				for (ULONG i = newSize; i < m_Size; i++)
+					m_pData[i].~T();
+				m_Size = newSize;
+				return;
+			}
 			m_Capacity = newSize;
 			auto data = static_cast<T*>(ExAllocatePool2(static_cast<POOL_FLAGS>(Pool), sizeof(T) * newSize, Tag));
 			if (data == nullptr)
@@ -201,12 +213,14 @@ namespace ktl {
 		}
 
 		void Clear() {
-			m_Size = m_Capacity = 0;
 			Free();
+			m_Size = m_Capacity = 0;
 		}
 
 		void Free() {
 			if (m_pData) {
+				for (ULONG i = 0; i < m_Size; i++)
+					(m_pData + i)->~T();
 				ExFreePool(m_pData);
 				m_pData = nullptr;
 			}
