@@ -1,9 +1,5 @@
 #pragma once
 
-#ifndef DRIVER_TAG
-#define DRIVER_TAG 'dltk'
-#endif
-
 enum class PoolType : ULONG64 {
 	Paged = POOL_FLAG_PAGED,
 	NonPaged = POOL_FLAG_NON_PAGED,
@@ -17,8 +13,9 @@ enum class PoolType : ULONG64 {
 };
 DEFINE_ENUM_FLAG_OPERATORS(PoolType);
 
-void* __cdecl operator new(size_t size, PoolType pool, ULONG tag = DRIVER_TAG);
-void* __cdecl operator new[](size_t size, PoolType pool, ULONG tag = DRIVER_TAG);
+void* __cdecl operator new(size_t size, PoolType pool, ULONG tag);
+void* __cdecl operator new[](size_t size, PoolType pool, ULONG tag);
+void* __cdecl operator new(size_t size, void* address);
 
 void __cdecl  operator delete(void* p, size_t);
 void __cdecl  operator delete[](void* p, size_t);

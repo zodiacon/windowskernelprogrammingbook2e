@@ -21,6 +21,13 @@
 #include "Vector.h"
 #include "Mutex.h"
 #include "FastMutex.h"
+#ifdef __FLTKERNEL__
 #include "FilterFileNameInformation.h"
+#endif
 
 NTSTATUS CompleteRequest(PIRP Irp, NTSTATUS status = STATUS_SUCCESS, ULONG_PTR info = 0, CCHAR boost = IO_NO_INCREMENT);
+
+void Error(PCSTR format, ...);
+void Warning(PCSTR format, ...);
+void Trace(PCSTR format, ...);
+void Info(PCSTR format, ...);
