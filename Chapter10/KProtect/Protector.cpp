@@ -36,6 +36,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 	UNICODE_STRING deviceName = RTL_CONSTANT_STRING(L"\\Device\\KProtect");
 	UNICODE_STRING symName = RTL_CONSTANT_STRING(L"\\??\\KProtect");
 	PDEVICE_OBJECT DeviceObject = nullptr;
+	bool symLinkCreated = false;
 
 	do {
 		status = ObRegisterCallbacks(&reg, &g_Data.RegHandle);
@@ -55,11 +56,14 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 			KdPrint((DRIVER_PREFIX "failed to create symbolic link (0x%08X)\n", status));
 			break;
 		}
+		symLinkCreated = true;
 	} while (false);
 
 	if (!NT_SUCCESS(status)) {
 		if (g_Data.RegHandle)
 			ObUnRegisterCallbacks(g_Data.RegHandle);
+		if (symLinkCreated)
+            		IoDeleteSymbolicLink(&symName);
 		if (DeviceObject)
 			IoDeleteDevice(DeviceObject);
 		return status;
