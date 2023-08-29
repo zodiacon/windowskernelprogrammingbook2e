@@ -55,7 +55,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 	if (!NT_SUCCESS(status)) {
 		if (procRegistered)
 			PsSetCreateProcessNotifyRoutineEx(OnProcessNotify, TRUE);
-		if (!symLinkCreated)
+		if (symLinkCreated)
 			IoDeleteSymbolicLink(&link);
 		if (devObj)
 			IoDeleteDevice(devObj);
