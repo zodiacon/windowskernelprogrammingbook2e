@@ -265,6 +265,24 @@ namespace ktl {
 			return m_Data + m_Len;
 		}
 
+		bool operator==(BasicString const& other) const {
+			if constexpr (sizeof(T) == sizeof(char))
+				return strcmp(m_Data, other.m_Data) == 0;
+			else
+				return wcscmp(m_Data, other.m_Data) == 0;
+		}
+
+		bool operator!=(BasicString const& other) const {
+			return !(*this == other);
+		}
+
+		bool EqualsNoCase(BasicString const& other) const {
+			if constexpr (sizeof(T) == sizeof(char))
+				return _stricmp(m_Data, other.m_Data) == 0;
+			else
+				return _wcsicmp(m_Data, other.m_Data) == 0;
+		}
+
 	protected:
 		constexpr T const* FindInternal(T ch) {
 			for (ULONG i = 0; i < m_Len; i++)
@@ -301,24 +319,6 @@ namespace ktl {
 				memcpy(data, src, lenToCopy * sizeof(T));
 			data[len] = static_cast<T>(0);
 			return data;
-		}
-
-		bool operator==(BasicString const& other) const {
-			if constexpr (sizeof(T) == sizeof(char))
-				return strcmp(m_Data, other.m_Data) == 0;
-			else
-				return wcscmp(m_Data, other.m_Data) == 0;
-		}
-
-		bool operator!=(BasicString const& other) const {
-			return !(*this == other);
-		}
-
-		bool EqualsNoCase(BasicString const& other) const {
-			if constexpr (sizeof(T) == sizeof(char))
-				return _stricmp(m_Data, other.m_Data) == 0;
-			else
-				return _wcsicmp(m_Data, other.m_Data) == 0;
 		}
 
 	private:

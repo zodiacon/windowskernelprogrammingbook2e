@@ -19,3 +19,55 @@ void* __cdecl operator new(size_t size, void* address);
 
 void __cdecl  operator delete(void* p, size_t);
 void __cdecl  operator delete[](void* p, size_t);
+
+template<PoolType Pool = PoolType::NonPaged, typename T = UCHAR>
+struct MemoryBuffer {
+	MemoryBuffer(ULONG size, ULONG tag) : m_Size(size) {
+		m_Buffer = (T*)ExAllocatePool2((POOL_FLAGS)Pool, size * sizeof(T), tag);
+	}
+	MemoryBuffer(MemoryBuffer const&) = delete;
+	MemoryBuffer& operator=(MemoryBuffer const&) = delete;
+
+	MemoryBuffer(MemoryBuffer const&& other) : m_Buffer(other.m_Buffer), m_Size(other.m_Size) {
+		other.m_Buffer = nullptr;
+	}
+	MemoryBuffer& operator=(MemoryBuffer const&& other) {
+		if (&other != this) {
+			Free();
+			m_Buffer = other.m_Buffer;
+			m_Size = other.m_Size;
+			other.m_Buffer = nullptr;
+		}
+		return *this;
+	}
+
+	void Free() {
+		if (m_Buffer) {
+			ExFreePool(m_Buffer);
+			m_Buffer = nullptr;
+		}
+	}
+
+	~MemoryBuffer() {
+		Free();
+	}
+
+	ULONG Size() const {
+		return m_Size;
+	}
+
+	ULONG SizeInBytes() const {
+		return m_Size * sizeof(T);
+	}
+
+	operator bool() const {
+		return m_Buffer != nullptr;
+	}
+
+	T* Get() const {
+		return m_Buffer;
+	}
+
+	T* m_Buffer;
+	ULONG m_Size;
+};
