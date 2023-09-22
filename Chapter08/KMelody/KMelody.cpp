@@ -17,7 +17,7 @@ extern "C" NTSTATUS
 DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
 	UNREFERENCED_PARAMETER(RegistryPath);
 
-	g_State = new (PagedPool) PlaybackState;
+	g_State = new (POOL_FLAG_PAGED) PlaybackState;
 	if (g_State == nullptr)
 		return STATUS_INSUFFICIENT_RESOURCES;
 
