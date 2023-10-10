@@ -68,6 +68,9 @@ NTSTATUS MelodyCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		//
 		status = g_State->Start(DeviceObject);
 	}
+	else {
+		g_State->Stop();
+	}
 	return CompleteRequest(Irp, status);
 }
 
