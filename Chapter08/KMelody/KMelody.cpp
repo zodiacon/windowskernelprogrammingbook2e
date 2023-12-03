@@ -17,7 +17,7 @@ extern "C" NTSTATUS
 DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
 	UNREFERENCED_PARAMETER(RegistryPath);
 
-	g_State = new (PagedPool) PlaybackState;
+	g_State = new (POOL_FLAG_PAGED) PlaybackState;
 	if (g_State == nullptr)
 		return STATUS_INSUFFICIENT_RESOURCES;
 
@@ -67,6 +67,9 @@ NTSTATUS MelodyCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 		// create the "playback" thread (if needed)
 		//
 		status = g_State->Start(DeviceObject);
+	}
+	else {
+		g_State->Stop();
 	}
 	return CompleteRequest(Irp, status);
 }

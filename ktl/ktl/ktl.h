@@ -27,7 +27,7 @@
 
 NTSTATUS CompleteRequest(PIRP Irp, NTSTATUS status = STATUS_SUCCESS, ULONG_PTR info = 0, CCHAR boost = IO_NO_INCREMENT);
 
-void Error(PCSTR format, ...);
-void Warning(PCSTR format, ...);
-void Trace(PCSTR format, ...);
-void Info(PCSTR format, ...);
+void __cdecl Error(PCSTR format, ...);
+void __cdecl Warning(PCSTR format, ...);
+void __cdecl Trace(PCSTR format, ...);
+void __cdecl Info(PCSTR format, ...);

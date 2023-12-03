@@ -62,6 +62,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 			ObUnRegisterCallbacks(g_Data.RegHandle);
 		if (DeviceObject)
 			IoDeleteDevice(DeviceObject);
+		g_Data.Term();
 		return status;
 	}
 
