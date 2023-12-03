@@ -3,7 +3,7 @@
 
 #include <Windows.h>
 #include <stdio.h>
-#include "..\Kkdelprotect\kdelprotectPublic.h"
+#include "..\kdelprotect\kdelprotectPublic.h"
 
 int wmain(int argc, const wchar_t* argv[]) {
 	if (argc < 2) {

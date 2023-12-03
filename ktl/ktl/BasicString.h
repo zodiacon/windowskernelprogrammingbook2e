@@ -207,14 +207,14 @@ namespace ktl {
 			return caseInsensitive ? FindInternalNoCase(ch) : FindInternal(ch);
 		}
 
-		UNICODE_STRING& GetUnicodeString(UNICODE_STRING& uc) {
+		UNICODE_STRING& GetUnicodeString(UNICODE_STRING& uc) const {
 			static_assert(sizeof(T) == sizeof(wchar_t));
 			uc.Length = uc.MaximumLength = USHORT(Length() * sizeof(wchar_t));
 			uc.Buffer = m_Data;
 			return uc;
 		}
 
-		UNICODE_STRING& GetUnicodeString(PUNICODE_STRING uc) {
+		UNICODE_STRING& GetUnicodeString(PUNICODE_STRING uc) const {
 			return GetUnicodeString(*uc);
 		}
 

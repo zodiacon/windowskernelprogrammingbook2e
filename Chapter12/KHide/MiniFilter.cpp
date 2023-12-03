@@ -212,7 +212,7 @@ FLT_POSTOP_CALLBACK_STATUS OnPostDirectoryControl(PFLT_CALLBACK_DATA Data, PCFLT
 				continue;
 
 			UNICODE_STRING copy;
-			copy.Buffer = name.Data();
+			copy.Buffer = (PWCH)name.Data();
 			copy.Length = USHORT(bs - name + 1) * sizeof(WCHAR);
 			//
 			// copy now points to the parent directory

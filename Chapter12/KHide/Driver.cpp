@@ -10,7 +10,7 @@ NTSTATUS OnDeviceControl(_In_ PDEVICE_OBJECT DeviceObject, _In_ PIRP Irp);
 NTSTATUS InitMiniFilter(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath);
 
 extern "C" NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath) {
-	g_State = new (PoolType::NonPaged) FilterState;
+	g_State = new (PoolType::NonPaged, DRIVER_TAG) FilterState;
 	if (!g_State)
 		return STATUS_NO_MEMORY;
 
