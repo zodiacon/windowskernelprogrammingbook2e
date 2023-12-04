@@ -41,7 +41,7 @@ namespace ktl {
 				ExRaiseStatus(STATUS_NO_MEMORY);
 		}
 
-		explicit BasicString(PUNICODE_STRING us) {
+		explicit BasicString(PCUNICODE_STRING us) {
 			static_assert(sizeof(T) == sizeof(wchar_t));
 			if (us->Length > 0) {
 				NT_ASSERT(us->Buffer);
@@ -55,8 +55,6 @@ namespace ktl {
 				m_Len = m_Capacity = 0;
 			}
 		}
-
-		explicit BasicString(UNICODE_STRING const& us) : BasicString(&us) {}
 
 		explicit BasicString(ULONG capacity) {
 			m_Capacity = capacity;
@@ -145,6 +143,18 @@ namespace ktl {
 			return Append(other);
 		}
 
+		BasicString& operator+=(T const* str) {
+			if constexpr (sizeof(T) == sizeof(char))
+				return Append(str, (ULONG)strlen(str));
+			else
+				return Append(str, (ULONG)wcslen(str));
+		}
+
+		BasicString& operator+=(UNICODE_STRING const& other) {
+			static_assert(sizeof(T) == sizeof(wchar_t));
+			return Append(other.Buffer, other.Length / sizeof(WCHAR));
+		}
+
 		BasicString operator+(BasicString const& other) {
 			auto s(*this);
 			s += other;
@@ -186,17 +196,39 @@ namespace ktl {
 		//
 		BasicString& Append(BasicString const& str) {
 			auto newLen = m_Len + str.Length();
-			if (m_Len > m_Capacity) {
-				Release();
-				m_Data = AllocateAndCopy(newLen, str.Data());
-				if (m_Data == nullptr)
+			if (newLen > m_Capacity) {
+				auto data = AllocateAndCopy(newLen, m_Data, m_Len);
+				if (data == nullptr)
 					ExRaiseStatus(STATUS_NO_MEMORY);
+				memcpy(data + m_Len, str.Data(), str.Length() * sizeof(T));
+				Release();
 				m_Capacity = m_Len = newLen;
+				m_Data = data;
 			}
 			else {
-				memcpy(m_Data + m_Len * sizeof(T), str.Data(), str.Length() * sizeof(T));
-				m_Len += str.Length();
+				memcpy(m_Data + m_Len, str.Data(), str.Length() * sizeof(T));
+				m_Len = newLen;
 			}
+			m_Data[m_Len] = static_cast<T>(0);
+			return *this;
+		}
+
+		BasicString& Append(T const* str, ULONG count) {
+			auto newLen = m_Len + count;
+			if (newLen > m_Capacity) {
+				auto data = AllocateAndCopy(newLen, m_Data, m_Len);
+				if (data == nullptr)
+					ExRaiseStatus(STATUS_NO_MEMORY);
+				memcpy(data + m_Len, str, count * sizeof(T));
+				Release();
+				m_Capacity = m_Len = newLen;
+				m_Data = data;
+			}
+			else {
+				memcpy(m_Data + m_Len, str, count * sizeof(T));
+				m_Len = newLen;
+			}
+			m_Data[m_Len] = static_cast<T>(0);
 			return *this;
 		}
 
@@ -306,7 +338,7 @@ namespace ktl {
 			return nullptr;
 		}
 
-		T* AllocateAndCopy(ULONG len, T const* src, ULONG lenToCopy = 0) {
+		static T* AllocateAndCopy(ULONG len, T const* src, ULONG lenToCopy = 0) {
 			if (lenToCopy == 0)
 				lenToCopy = len;
 			auto data = static_cast<T*>(ExAllocatePool2((POOL_FLAGS)Pool, (len + 1) * sizeof(T), Tag));
@@ -315,9 +347,8 @@ namespace ktl {
 #ifdef KTL_TRACK_BASIC_STRING
 			DbgPrint(KTL_PREFIX "BasicString allocate %u characters (copy: %u)\n", len, lenToCopy);
 #endif
-			if (lenToCopy > 0)
+			if (lenToCopy && src)
 				memcpy(data, src, lenToCopy * sizeof(T));
-			data[len] = static_cast<T>(0);
 			return data;
 		}
 
