@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <stdio.h>
 #include "..\kdelprotect\kdelprotectPublic.h"
+#include <string>
 
 int wmain(int argc, const wchar_t* argv[]) {
 	if (argc < 2) {
@@ -18,8 +19,11 @@ int wmain(int argc, const wchar_t* argv[]) {
 	}
 
 	DWORD returned;
+	std::wstring exts = argv[1];
+	if (exts.back() != L';')
+		exts += L';';
 	auto ok = DeviceIoControl(hDevice, IOCTL_DELPROTECT_SET_EXTENSIONS, 
-		(PVOID)argv[1], (DWORD)(1 + wcslen(argv[1])) * sizeof(WCHAR), nullptr, 0, &returned, nullptr);
+		(PVOID)argv[1], (DWORD)(1 + exts.length()) * sizeof(WCHAR), nullptr, 0, &returned, nullptr);
 	printf("Extensions set: %s\n", ok ? "OK" : "Error");
 
 	return 0;

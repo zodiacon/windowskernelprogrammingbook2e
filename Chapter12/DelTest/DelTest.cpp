@@ -8,7 +8,7 @@ void HandleResult(BOOL success) {
 	if (success)
 		printf("Success!\n");
 	else
-		printf("Error: %d\n", ::GetLastError());
+		printf("Error: %d\n", GetLastError());
 }
 
 int wmain(int argc, const wchar_t* argv[]) {
