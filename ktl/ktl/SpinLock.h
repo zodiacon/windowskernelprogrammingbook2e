@@ -10,19 +10,19 @@ namespace ktl {
 		void Unlock();
 
 	private:
-		KSPIN_LOCK m_lock;
-		KIRQL m_oldIrql;
+		KSPIN_LOCK m_Lock;
+		KIRQL m_OldIrql;
 	};
 
 	struct QueuedSpinLock {
 		void Init();
-		void Lock();
-		void Unlock();
+		void Lock(PKLOCK_QUEUE_HANDLE handle);
+		void Unlock(PKLOCK_QUEUE_HANDLE handle);
 
 	private:
-		KLOCK_QUEUE_HANDLE m_handle;
-		KSPIN_LOCK m_lock;
+		KSPIN_LOCK m_Lock;
 	};
+
 #ifdef KTL_NAMESPACE
 }
 #endif

@@ -10,7 +10,7 @@ namespace ktl {
 		void Unlock();
 
 	private:
-		KMUTEX m_mutex;
+		KMUTEX m_Mutex;
 	};
 
 #ifdef KTL_NAMESPACE

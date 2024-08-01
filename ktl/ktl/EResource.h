@@ -16,7 +16,7 @@ public:
 	void UnlockShared();
 
 private:
-	ERESOURCE m_res;
+	ERESOURCE m_Res;
 };
 
 #ifdef KTL_NAMESPACE

@@ -7,11 +7,11 @@ namespace ktl {
 	template<typename T>
 	struct LookasideList {
 		NTSTATUS Init(POOL_TYPE pool, ULONG tag) {
-			return ExInitializeLookasideListEx(&m_lookaside, nullptr, nullptr, pool, 0, sizeof(T), tag, 0);
+			return ExInitializeLookasideListEx(&m_Lookaside, nullptr, nullptr, pool, 0, sizeof(T), tag, 0);
 		}
 
 		void Delete() {
-			ExDeleteLookasideListEx(&m_lookaside);
+			ExDeleteLookasideListEx(&m_Lookaside);
 		}
 
 		T* Alloc() {
@@ -19,11 +19,11 @@ namespace ktl {
 		}
 
 		void Free(T* p) {
-			ExFreeToLookasideListEx(&m_lookaside, p);
+			ExFreeToLookasideListEx(&m_Lookaside, p);
 		}
 
 	private:
-		LOOKASIDE_LIST_EX m_lookaside;
+		LOOKASIDE_LIST_EX m_Lookaside;
 	};
 
 #ifdef KTL_NAMESPACE

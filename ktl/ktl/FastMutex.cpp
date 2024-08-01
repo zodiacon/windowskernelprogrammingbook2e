@@ -6,14 +6,14 @@ using namespace ktl;
 #endif
 
 void FastMutex::Init() {
-	ExInitializeFastMutex(&m_mutex);
+	ExInitializeFastMutex(&m_Mutex);
 }
 
 void FastMutex::Lock() {
-	ExAcquireFastMutex(&m_mutex);
+	ExAcquireFastMutex(&m_Mutex);
 }
 
 void FastMutex::Unlock() {
-	ExReleaseFastMutex(&m_mutex);
+	ExReleaseFastMutex(&m_Mutex);
 }
 

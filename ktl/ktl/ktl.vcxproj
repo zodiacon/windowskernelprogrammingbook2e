@@ -236,6 +236,7 @@
     <ClInclude Include="EResource.h" />
     <ClInclude Include="FastMutex.h" />
     <ClInclude Include="FilterFileNameInformation.h" />
+    <ClInclude Include="KernelHandle.h" />
     <ClInclude Include="ktl.h" />
     <ClInclude Include="LinkedList.h" />
     <ClInclude Include="Locker.h" />
@@ -251,6 +252,7 @@
     <ClCompile Include="EResource.cpp" />
     <ClCompile Include="FastMutex.cpp" />
     <ClCompile Include="FilterFileNameInformation.cpp" />
+    <ClCompile Include="KernelHandle.cpp" />
     <ClCompile Include="ktl.cpp" />
     <ClCompile Include="LinkedList.cpp" />
     <ClCompile Include="Memory.cpp" />

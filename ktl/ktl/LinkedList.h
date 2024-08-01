@@ -9,80 +9,80 @@ namespace ktl {
 	template<typename T, typename TLock = FastMutex>
 	struct LinkedList {
 		void Init() {
-			InitializeListHead(&m_head);
-			m_lock.Init();
-			m_count = 0;
+			InitializeListHead(&m_Head);
+			m_Lock.Init();
+			m_Count = 0;
 		}
 
 		bool IsEmpty() const {
-			return m_count == 0;
+			return m_Count == 0;
 		}
 
 		ULONG GetCount() const {
-			return m_count;
+			return m_Count;
 		}
 
 		void Clear() {
-			Locker locker(m_lock);
-			InitializeListHead(&m_head);
-			m_count = 0;
+			Locker locker(m_Lock);
+			InitializeListHead(&m_Head);
+			m_Count = 0;
 		}
 
 		void AddHead(T* item) {
-			Locker locker(m_lock);
-			InsertHeadList(&m_head, &item->Link);
-			m_count++;
+			Locker locker(m_Lock);
+			InsertHeadList(&m_Head, &item->Link);
+			m_Count++;
 		}
 
 		void AddTail(T* item) {
-			Locker locker(m_lock);
-			InsertTailList(&m_head, &item->Link);
-			m_count++;
+			Locker locker(m_Lock);
+			InsertTailList(&m_Head, &item->Link);
+			m_Count++;
 		}
 
 		T* RemoveHead() {
-			Locker locker(m_lock);
-			if (m_count == 0)
+			Locker locker(m_Lock);
+			if (m_Count == 0)
 				return nullptr;
 
-			m_count--;
-			auto link = RemoveHeadList(&m_head);
-			return link == &m_head ? nullptr : CONTAINING_RECORD(link, T, Link);
+			m_Count--;
+			auto link = RemoveHeadList(&m_Head);
+			return link == &m_Head ? nullptr : CONTAINING_RECORD(link, T, Link);
 		}
 
 		T* RemoveTail() {
-			Locker locker(m_lock);
-			if (m_count == 0)
+			Locker locker(m_Lock);
+			if (m_Count == 0)
 				return nullptr;
-			m_count--;
-			auto link = RemoveTailList(&m_head);
-			return link == &m_head ? nullptr : CONTAINING_RECORD(link, T, Link);
+			m_Count--;
+			auto link = RemoveTailList(&m_Head);
+			return link == &m_Head ? nullptr : CONTAINING_RECORD(link, T, Link);
 		}
 
 		T const* GetHead() const {
-			Locker locker(m_lock);
-			if (m_count == 0)
+			Locker locker(m_Lock);
+			if (m_Count == 0)
 				return nullptr;
-			return CONTAINING_RECORD(m_head.Flink, T, Link);
+			return CONTAINING_RECORD(m_Head.Flink, T, Link);
 		}
 
 		T const* GetTail() const {
-			Locker locker(m_lock);
-			if (m_count == 0)
+			Locker locker(m_Lock);
+			if (m_Count == 0)
 				return nullptr;
-			return CONTAINING_RECORD(m_head.Blink, T, Link);
+			return CONTAINING_RECORD(m_Head.Blink, T, Link);
 		}
 
 		bool RemoveItem(T* item) {
-			Locker locker(m_lock);
-			m_count--;
+			Locker locker(m_Lock);
+			m_Count--;
 			return RemoveEntryList(&item->Link);
 		}
 
 		template<typename F>
 		T* Find(F predicate) {
-			Locker locker(m_lock);
-			for (auto node = m_head.Flink; node != &m_head; node = node->Flink) {
+			Locker locker(m_Lock);
+			for (auto node = m_Head.Flink; node != &m_Head; node = node->Flink) {
 				auto item = CONTAINING_RECORD(node, T, Link);
 				if (predicate(item))
 					return item;
@@ -92,8 +92,8 @@ namespace ktl {
 
 		template<typename F>
 		T* ForEach(F action) {
-			Locker locker(m_lock);
-			for (auto node = m_head.Flink; node != &m_head; node = node->Flink) {
+			Locker locker(m_Lock);
+			for (auto node = m_Head.Flink; node != &m_Head; node = node->Flink) {
 				auto item = CONTAINING_RECORD(node, T, Link);
 				action(item);
 			}
@@ -101,9 +101,9 @@ namespace ktl {
 		}
 
 	private:
-		LIST_ENTRY m_head;
-		mutable TLock m_lock;
-		ULONG m_count;
+		LIST_ENTRY m_Head;
+		mutable TLock m_Lock;
+		ULONG m_Count;
 	};
 
 #ifdef KTL_NAMESPACE

@@ -7,23 +7,23 @@ using namespace ktl;
 
 
 void ExecutiveResource::Init() {
-	ExInitializeResourceLite(&m_res);
+	ExInitializeResourceLite(&m_Res);
 }
 
 void ExecutiveResource::Delete() {
-	ExDeleteResourceLite(&m_res);
+	ExDeleteResourceLite(&m_Res);
 }
 
 void ExecutiveResource::Lock() {
-	ExEnterCriticalRegionAndAcquireResourceExclusive(&m_res);
+	ExEnterCriticalRegionAndAcquireResourceExclusive(&m_Res);
 }
 
 void ExecutiveResource::Unlock() {
-	ExReleaseResourceAndLeaveCriticalRegion(&m_res);
+	ExReleaseResourceAndLeaveCriticalRegion(&m_Res);
 }
 
 void ExecutiveResource::LockShared() {
-	ExEnterCriticalRegionAndAcquireResourceShared(&m_res);
+	ExEnterCriticalRegionAndAcquireResourceShared(&m_Res);
 }
 
 void ExecutiveResource::UnlockShared() {

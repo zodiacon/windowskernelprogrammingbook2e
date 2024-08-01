@@ -191,6 +191,10 @@ namespace ktl {
 			return Data();
 		}
 
+		bool IsEmpty() const {
+			return m_Len == 0;
+		}
+
 		//
 		// operations
 		//
