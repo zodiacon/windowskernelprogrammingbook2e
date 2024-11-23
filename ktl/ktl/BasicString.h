@@ -119,7 +119,7 @@ namespace ktl {
 			}
 			else {
 				Release();
-				m_Capacity = min(m_Len, DefaultCapacity);
+				m_Capacity = max(m_Len, DefaultCapacity);
 				m_Data = AllocateAndCopy(m_Capacity, other->Buffer, m_Len);
 				if (m_Data == nullptr)
 					ExRaiseStatus(STATUS_NO_MEMORY);
