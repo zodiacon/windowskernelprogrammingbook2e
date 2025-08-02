@@ -119,7 +119,7 @@ namespace ktl {
 			}
 			else {
 				Release();
-				m_Capacity = min(m_Len, DefaultCapacity);
+				m_Capacity = max(m_Len, DefaultCapacity);
 				m_Data = AllocateAndCopy(m_Capacity, other->Buffer, m_Len);
 				if (m_Data == nullptr)
 					ExRaiseStatus(STATUS_NO_MEMORY);
@@ -252,6 +252,17 @@ namespace ktl {
 
 		UNICODE_STRING& GetUnicodeString(PUNICODE_STRING uc) const {
 			return GetUnicodeString(*uc);
+		}
+		
+		ANSI_STRING& GetAnsiString(ANSI_STRING& ansi) const {
+			static_assert(sizeof(T) == sizeof(char));
+			ansi.Length = ansi.MaximumLength = USHORT(Length());
+			ansi.Buffer = m_Data;
+			return ansi;
+		}
+
+		ANSI_STRING& GetAnsiString(PANSI_STRING ansi) const {
+			return GetAnsiString(*ansi);
 		}
 
 		bool EqualNoCase(T const* str) const {
