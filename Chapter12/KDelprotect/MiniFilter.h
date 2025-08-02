@@ -4,7 +4,7 @@
 
 struct FilterState {
 	PFLT_FILTER Filter;
-	UNICODE_STRING Extentions;
+	UNICODE_STRING Extensions;
 	ExecutiveResource Lock;
 	PDRIVER_OBJECT DriverObject;
 };

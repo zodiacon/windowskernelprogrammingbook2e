@@ -79,7 +79,7 @@ KmdfLibraryVersion = $KMDFVERSION$
 
 [Strings]
 SPSVCINST_ASSOCSERVICE= 0x00000002
-ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ManufacturerName="Pavel Yosifovich" ;TODO: Replace with your manufacturer name
 DiskName = "Booster2 Installation Disk"
 Booster2.DeviceDesc = "Booster2 Device"
 Booster2.SVCDESC = "Booster2 Service"

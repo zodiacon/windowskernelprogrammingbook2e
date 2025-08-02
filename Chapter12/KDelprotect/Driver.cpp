@@ -85,7 +85,7 @@ NTSTATUS OnDeviceControl(PDEVICE_OBJECT, PIRP Irp) {
 				status = STATUS_INVALID_PARAMETER;
 				break;
 			}
-			if (g_State.Extentions.MaximumLength <
+			if (g_State.Extensions.MaximumLength <
 				inputLen - sizeof(WCHAR)) {
 				//
 				// allocate a new buffer to hold the extensions
@@ -96,12 +96,12 @@ NTSTATUS OnDeviceControl(PDEVICE_OBJECT, PIRP Irp) {
 					status = STATUS_INSUFFICIENT_RESOURCES;
 					break;
 				}
-				g_State.Extentions.MaximumLength = (USHORT)inputLen;
+				g_State.Extensions.MaximumLength = (USHORT)inputLen;
 				//
 				// free the old buffer
 				//
-				ExFreePool(g_State.Extentions.Buffer);
-				g_State.Extentions.Buffer = (PWSTR)buffer;
+				ExFreePool(g_State.Extensions.Buffer);
+				g_State.Extensions.Buffer = (PWSTR)buffer;
 			}
 			UNICODE_STRING ustr;
 			RtlInitUnicodeString(&ustr, ext);
@@ -109,8 +109,8 @@ NTSTATUS OnDeviceControl(PDEVICE_OBJECT, PIRP Irp) {
 			// make sure the extensions are uppercase
 			//
 			RtlUpcaseUnicodeString(&ustr, &ustr, FALSE);
-			memcpy(g_State.Extentions.Buffer, ext, len = inputLen);
-			g_State.Extentions.Length = (USHORT)inputLen;
+			memcpy(g_State.Extensions.Buffer, ext, len = inputLen);
+			g_State.Extensions.Length = (USHORT)inputLen;
 			status = STATUS_SUCCESS;
 			break;
 	}

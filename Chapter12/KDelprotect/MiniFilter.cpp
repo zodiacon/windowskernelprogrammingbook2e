@@ -26,12 +26,12 @@ NTSTATUS InitMiniFilter(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPat
 	// initialize initial extensions string
 	//
 	WCHAR ext[] = L"PDF;";
-	g_State.Extentions.Buffer = (PWSTR)ExAllocatePool2(POOL_FLAG_PAGED, sizeof(ext), DRIVER_TAG);
-	if (g_State.Extentions.Buffer == nullptr)
+	g_State.Extensions.Buffer = (PWSTR)ExAllocatePool2(POOL_FLAG_PAGED, sizeof(ext), DRIVER_TAG);
+	if (g_State.Extensions.Buffer == nullptr)
 		return STATUS_NO_MEMORY;
 
-	memcpy(g_State.Extentions.Buffer, ext, sizeof(ext));
-	g_State.Extentions.Length = g_State.Extentions.MaximumLength = sizeof(ext);
+	memcpy(g_State.Extensions.Buffer, ext, sizeof(ext));
+	g_State.Extensions.Length = g_State.Extensions.MaximumLength = sizeof(ext);
 
 	HANDLE hKey = nullptr, hSubKey = nullptr;
 	NTSTATUS status;
@@ -128,7 +128,7 @@ NTSTATUS DelProtectUnload(FLT_FILTER_UNLOAD_FLAGS Flags) {
 
 	FltUnregisterFilter(g_State.Filter);
 	g_State.Lock.Delete();
-	ExFreePool(g_State.Extentions.Buffer);
+	ExFreePool(g_State.Extensions.Buffer);
 	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\DelProtect");
 	IoDeleteSymbolicLink(&symLink);
 	IoDeleteDevice(g_State.DriverObject->DeviceObject);
@@ -231,7 +231,7 @@ bool IsDeleteAllowed(PCUNICODE_STRING filename) {
 		//
 		// search for the prefix
 		//
-		return wcsstr(g_State.Extentions.Buffer, uext) == nullptr;
+		return wcsstr(g_State.Extensions.Buffer, uext) == nullptr;
 	}
 	return true;
 }
