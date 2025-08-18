@@ -35,6 +35,8 @@ int wmain(int argc, const wchar_t* argv[]) {
 		return Error("Failed to allocate buffer");
 
 	DWORD bytes;
+	FILE_END_OF_FILE_INFO info;
+	info.EndOfFile = size;
 	while (size.QuadPart > 0) {
 		if (!ReadFile(hSource, buffer, (DWORD)(min((LONGLONG)bufferSize, size.QuadPart)), &bytes, nullptr))
 			return Error("Failed to read data");
@@ -43,6 +45,8 @@ int wmain(int argc, const wchar_t* argv[]) {
 			return Error("Failed to write data");
 		size.QuadPart -= bytes;
 	}
+
+	SetFileInformationByHandle(hTarget, FileEndOfFileInfo, (LPVOID)&info, sizeof(info));
 
 	printf("Restore successful!\n");
 
