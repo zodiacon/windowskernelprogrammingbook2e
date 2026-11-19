@@ -12,7 +12,7 @@ void ExecutiveResource::Delete() {
 void ExecutiveResource::Lock() {
 	m_CritRegion = KeAreApcsDisabled();
 	if(m_CritRegion)
-		ExAcquireResourceExclusiveLite(&m_res, TRUE);
+		ExAcquireResourceExclusiveLite(&m_res, FALSE);
 	else
 		ExEnterCriticalRegionAndAcquireResourceExclusive(&m_res);
 }
@@ -27,7 +27,7 @@ void ExecutiveResource::Unlock() {
 void ExecutiveResource::LockShared() {
 	m_CritRegion = KeAreApcsDisabled();
 	if (m_CritRegion)
-		ExAcquireResourceSharedLite(&m_res, TRUE);
+		ExAcquireResourceSharedLite(&m_res, FALSE);
 	else
 		ExEnterCriticalRegionAndAcquireResourceShared(&m_res);
 }
